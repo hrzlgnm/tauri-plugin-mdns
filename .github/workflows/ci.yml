@@ -197,6 +197,9 @@ jobs:
     name: "🤖 android-apk"
     needs: [changes]
     if: needs.changes.outputs.apk == 'true'
+    permissions:
+      contents: read # needed for checkout in the called workflow
+      actions: write # needed for sccache's GitHub cache backend
     uses: ./.github/workflows/test-android.yml
 
   all-required-green: # This job does nothing and is only used for the branch protection
