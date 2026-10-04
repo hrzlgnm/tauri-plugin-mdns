@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-set-protocol-flags"
+description = "Enables the set_protocol_flags command without any pre-configured scope."
+commands.allow = ["set_protocol_flags"]
+
+[[permission]]
+identifier = "deny-set-protocol-flags"
+description = "Denies the set_protocol_flags command without any pre-configured scope."
+commands.deny = ["set_protocol_flags"]

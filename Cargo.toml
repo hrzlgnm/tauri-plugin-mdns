@@ -1,0 +1,32 @@
+# Copyright 2026 hrzlgnm
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "tauri-plugin-mdns"
+version = "0.1.0"
+edition = "2021"
+description = "mDNS service discovery (browse) for Tauri apps, with Android local-network permission handling"
+license = "MIT-0"
+repository = "https://github.com/hrzlgnm/tauri-plugin-mdns"
+authors = ["hrzlgnm"]
+readme = "README.md"
+links = "tauri-plugin-mdns"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+[dependencies]
+log = "0.4"
+mdns-sd = "0.21"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_with = "3"
+tauri = "2"
+thiserror = "2.0"
+tokio = { version = "1", features = ["time"] }
+
+[target.'cfg(not(windows))'.dependencies]
+pnet = "0.35"
+
+[target.'cfg(windows)'.dependencies]
+ipconfig = "0.3"

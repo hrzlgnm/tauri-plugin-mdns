@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-browse-types"
+description = "Enables the browse_types command without any pre-configured scope."
+commands.allow = ["browse_types"]
+
+[[permission]]
+identifier = "deny-browse-types"
+description = "Denies the browse_types command without any pre-configured scope."
+commands.deny = ["browse_types"]

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Mandatory on Android 17+ for apps targeting SDK 37: without it,
+         local-network access (including mDNS) is blocked by default.
+         Ignored on older releases. The runtime half of the permission is
+         requested through the plugin's `localNetwork` alias. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+</manifest>

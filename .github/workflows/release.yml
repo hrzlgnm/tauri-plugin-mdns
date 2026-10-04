@@ -1,0 +1,47 @@
+# Copyright 2026 hrzlgnm
+# SPDX-License-Identifier: MIT
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write # to open Release PRs, tag, and create draft releases
+  issues: write # to manage autorelease labels on Release PRs
+  pull-requests: write # to open and update Release PRs
+
+jobs:
+  release-please:
+    name: "🤖 Release Please"
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+        id: release
+        with:
+          # GITHUB_TOKEN: pushes come from github-actions[bot] with a
+          # verified signature. CI runs on the Release PR are approved
+          # by the approve-release-pr job below. Tags are created by
+          # release-please (force-tag-creation) alongside the draft.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  approve-release-pr:
+    needs: [release-please]
+    if: needs.release-please.outputs.prs_created == 'true'
+    permissions:
+      actions: write # needed to approve workflow runs
+      contents: read
+      pull-requests: read
+    name: "✅ Approve Release PR workflows"
+    uses: hrzlgnm/actions/.github/workflows/approve-bot-pr-reusable.yml@275b5f2d90d762bd71567db08b250d8ba7cdb274 # v2.14.4
+    with:
+      branch: release-please--branches--main--components--tauri-plugin-mdns

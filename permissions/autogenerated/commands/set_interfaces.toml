@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-set-interfaces"
+description = "Enables the set_interfaces command without any pre-configured scope."
+commands.allow = ["set_interfaces"]
+
+[[permission]]
+identifier = "deny-set-interfaces"
+description = "Denies the set_interfaces command without any pre-configured scope."
+commands.deny = ["set_interfaces"]

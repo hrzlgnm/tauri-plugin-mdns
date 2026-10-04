@@ -1,0 +1,30 @@
+{
+    $schema: "https://docs.renovatebot.com/renovate-schema.json",
+    extends: [
+        "config:best-practices",
+        "monorepo:tauri",
+        "security:openssf-scorecard",
+        ":automergeDigest",
+        ":automergeMinor",
+        ":automergePr",
+        ":automergeRequireAllStatusChecks",
+        ":combinePatchMinorReleases",
+        ":docker",
+        ":enableVulnerabilityAlerts",
+        ":maintainLockFilesWeekly",
+        ":prConcurrentLimitNone",
+        ":prImmediately",
+        ":rebaseStalePrs",
+        ":semanticCommits",
+        ":semanticPrefixFixDepsChoreOthers",
+        ":separateMajorReleases",
+    ],
+    packageRules: [
+        {
+            description: "Use fix prefix for direct cargo dependency updates, including lockfile-only ones",
+            matchManagers: ["cargo"],
+            matchDepTypes: ["dependencies", "workspace.dependencies"],
+            semanticCommitType: "fix",
+        },
+    ],
+}

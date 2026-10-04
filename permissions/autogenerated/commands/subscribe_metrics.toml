@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-subscribe-metrics"
+description = "Enables the subscribe_metrics command without any pre-configured scope."
+commands.allow = ["subscribe_metrics"]
+
+[[permission]]
+identifier = "deny-subscribe-metrics"
+description = "Denies the subscribe_metrics command without any pre-configured scope."
+commands.deny = ["subscribe_metrics"]

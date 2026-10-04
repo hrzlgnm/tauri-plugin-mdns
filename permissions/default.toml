@@ -1,0 +1,24 @@
+"$schema" = "schemas/schema.json"
+[default]
+description = """
+This permission set enables mDNS service discovery (browse).
+
+### Granted Permissions
+
+Browsing for service types and instances, managing the browsed
+interfaces and protocol flags, reading daemon metrics, verifying
+instances, and checking/requesting local-network access on Android.
+"""
+permissions = [
+  "allow-browse-many",
+  "allow-browse-types",
+  "allow-get-protocol-flags",
+  "allow-local-network-status",
+  "allow-request-local-network-access",
+  "allow-set-interfaces",
+  "allow-set-protocol-flags",
+  "allow-stop-browse",
+  "allow-subscribe-interfaces",
+  "allow-subscribe-metrics",
+  "allow-verify",
+]
