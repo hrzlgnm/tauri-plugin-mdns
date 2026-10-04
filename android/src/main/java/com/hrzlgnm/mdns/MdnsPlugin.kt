@@ -5,6 +5,7 @@ package com.hrzlgnm.mdns
 
 import android.app.Activity
 import android.os.Build
+import app.tauri.PermissionState
 import app.tauri.annotation.Permission
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
