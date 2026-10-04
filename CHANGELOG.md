@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.3.2...tauri-plugin-mdns-v0.4.0) (2026-10-04)
+
+
+### Features
+
+* hold Android multicast lock while mDNS browsing ([#46](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/46)) ([22a05f9](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/22a05f9fd3a406c7977a424fd8710ca70071aa49))
+
 ## [0.3.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.3.1...tauri-plugin-mdns-v0.3.2) (2026-10-04)
 
 
