@@ -222,3 +222,6 @@ jobs:
         uses: re-actors/alls-green@a638d6464689bbb24c325bb3fe9404d63a913030
         with:
           jobs: ${{ toJSON(needs) }}
+          # Every job gated by the `changes` outputs may legitimately
+          # skip; `changes` and `typos` always run and must succeed.
+          allowed-skips: fmt, clippy, test, android, android-apk, bindings
