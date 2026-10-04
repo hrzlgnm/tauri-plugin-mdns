@@ -74,9 +74,10 @@ dropped packages without proving a `-sys` crate re-entered the graph.
   by string literal, so it builds against older and current AGP
   alike. `consumer-rules.pro` keeps the reflectively-loaded plugin
   class across the host app's release minification.
-- No `ios/` directory: iOS registers no native plugin and the Rust
-  engine treats iOS like desktop (implicit local-network grant via
-  the app's `Info.plist` keys).
+- No `ios/` directory and no iOS support by design: the mobile
+  engine is Android-only and iOS builds fail with an explicit
+  `compile_error!` in `src/mobile.rs`. Never add iOS shims,
+  fallbacks, or CI targets.
 
 ## Releases
 

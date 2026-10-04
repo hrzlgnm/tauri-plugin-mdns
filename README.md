@@ -4,11 +4,15 @@
 [![npm](https://img.shields.io/npm/v/tauri-plugin-mdns-api)](https://www.npmjs.com/package/tauri-plugin-mdns-api)
 [![License: MIT-0](https://img.shields.io/badge/License-MIT--0-blue.svg)](https://opensource.org/license/mit-0)
 
-mDNS service discovery (browse) for Tauri apps on desktop and mobile,
+mDNS service discovery (browse) for Tauri apps on desktop and Android,
 backed by the [`mdns-sd`](https://docs.rs/mdns-sd) crate in Rust on
-every platform: service-type enumeration, instance browsing with
-resolution and removal events, interface selection with protocol
+every supported platform: service-type enumeration, instance browsing
+with resolution and removal events, interface selection with protocol
 flags, daemon metrics, and instance verification.
+
+Mobile support is Android-only: iOS is not supported and there are no
+plans to port the plugin to it (iOS builds fail with an explicit
+error).
 
 On Android the plugin additionally handles the `ACCESS_LOCAL_NETWORK`
 runtime permission, which Android 17 mandates for apps targeting SDK
