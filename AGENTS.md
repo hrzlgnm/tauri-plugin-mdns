@@ -36,12 +36,20 @@ default.
 ## CI system dependencies
 
 `clippy`, `test`, and crate publishing compile the full `tauri`
-dependency stack, whose Linux build scripts (`glib-sys` et al.)
-require system GTK libraries on any Linux host. The workflows install
-`libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
-via apt for this reason; trimming `tauri` default features does not
-remove the requirement (transitive defaults win). Do not remove
-those install steps without proving `glib-sys` leaves the graph.
+dependency stack, whose Linux build scripts (`webkit2gtk-sys`,
+`javascriptcore-rs-sys`, `soup3-sys` via the default `wry` feature)
+require `libwebkit2gtk-4.1-dev` on any Linux host — even though the
+plugin only executes its native code on Android. `libappindicator3-dev`,
+`librsvg2-dev`, and `patchelf` are deliberately absent:
+`libappindicator-sys` and `librsvg-sys` are not in the built dependency
+graph (`cargo tree -i <sys-crate>` proves it; the lockfile still lists
+`libappindicator-sys` via the optional, unactivated `tray-icon`
+dependency) and `patchelf` is only invoked by
+tauri-bundler, which plugin CI never runs. Trimming `tauri` default
+features would drop `webkit2gtk` but not the non-optional `gtk`/`muda`
+dependencies, so it swaps one system dependency for another without
+removing the requirement — keep default features. Do not re-add the
+dropped packages without proving a `-sys` crate re-entered the graph.
 
 ## Android native code
 
@@ -79,7 +87,7 @@ those install steps without proving `glib-sys` leaves the graph.
   version always move in lockstep via `extra-files`.
 - Publishing uses trusted publishing (GitHub OIDC), never
   long-lived tokens: `rust-lang/crates-io-auth-action` for
-  crates.io, `npm publish --provenance` for npm. Both publishers
+  crates.io, `npm stage publish` (approved later by a maintainer) for npm. Both publishers
   must be registered before the first publish; the workflows fail
   otherwise.
 
