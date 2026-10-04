@@ -62,7 +62,7 @@ jobs:
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
 
       - name: 📱 Setup NDK
         uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
