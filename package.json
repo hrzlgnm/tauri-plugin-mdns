@@ -1,6 +1,6 @@
 {
     "name": "tauri-plugin-mdns-api",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "JavaScript bindings for tauri-plugin-mdns",
     "author": "hrzlgnm",
     "license": "MIT-0",
