@@ -5,4 +5,9 @@
          Ignored on older releases. The runtime half of the permission is
          requested through the plugin's `localNetwork` alias. -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <!-- Required to hold a WifiManager.MulticastLock while browsing: without
+         it the Wi-Fi stack filters out multicast packets and mDNS discovery
+         stalls (notably with the screen off or on older Android releases).
+         Normal permission, no runtime prompt. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 </manifest>

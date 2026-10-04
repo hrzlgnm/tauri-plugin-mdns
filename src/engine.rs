@@ -15,11 +15,11 @@ use std::{
     collections::{BTreeSet, HashMap, HashSet},
     net::IpAddr,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
 };
-use tauri::{Emitter, Runtime, Window};
+use tauri::{Emitter, Manager, Runtime, Window};
 
 type SharedServiceDaemon = Arc<Mutex<ServiceDaemon>>;
 
@@ -58,7 +58,17 @@ async fn browse_with_retry(
 
 pub struct ManagedState {
     daemon: SharedServiceDaemon,
+    /// Active instance-browse service types. Its mutex doubles as the
+    /// browse-lifecycle coordination lock: every transition that starts
+    /// or stops discovery holds it across the state change *and* the
+    /// native multicast-lock call, so a stop's check-and-release cannot
+    /// interleave with a concurrent start's insert-and-acquire.
     queriers: Arc<Mutex<HashSet<String>>>,
+    meta_browsing: Arc<AtomicBool>,
+    /// Generation counter for service-type browsing. Each `browse_types`
+    /// call bumps it, so a superseded browse task ending later cannot
+    /// clear fresh state or release the lock out from under it.
+    meta_gen: Arc<AtomicU64>,
     metrics_subscribed: AtomicBool,
     interfaces_subscribed: AtomicBool,
     ipv4_enabled: AtomicBool,
@@ -71,6 +81,8 @@ impl ManagedState {
         Self {
             daemon: initialize_shared_daemon(),
             queriers: Arc::new(Mutex::new(HashSet::new())),
+            meta_browsing: Arc::new(AtomicBool::new(false)),
+            meta_gen: Arc::new(AtomicU64::new(0)),
             metrics_subscribed: AtomicBool::new(false),
             interfaces_subscribed: AtomicBool::new(false),
             ipv4_enabled: AtomicBool::new(true),
@@ -198,6 +210,72 @@ where
     }
 }
 
+/// Acquires the native Wi-Fi multicast lock (no-op off Android).
+/// Call only while holding the coordination lock.
+fn multicast_acquire<R: Runtime>(window: &Window<R>) {
+    window
+        .state::<crate::Mdns<R>>()
+        .inner()
+        .acquire_multicast_lock();
+}
+
+/// Releases the native Wi-Fi multicast lock (no-op off Android).
+/// Call only while holding the coordination lock.
+fn multicast_release<R: Runtime>(window: &Window<R>) {
+    window
+        .state::<crate::Mdns<R>>()
+        .inner()
+        .release_multicast_lock();
+}
+
+/// Reconciles service-type browsing state when its task ends (startup
+/// failure or channel end), then releases the native lock when nothing
+/// browses anymore. A task superseded by a newer `browse_types` call
+/// leaves state alone: the newer browse owns the flag and the lock.
+fn reconcile_meta_exit<R: Runtime>(
+    window: &Window<R>,
+    queriers: &Arc<Mutex<HashSet<String>>>,
+    meta_browsing: &Arc<AtomicBool>,
+    meta_gen: &Arc<AtomicU64>,
+    generation: u64,
+) {
+    match queriers.lock() {
+        Ok(queriers) => {
+            if meta_gen.load(Ordering::SeqCst) != generation {
+                return;
+            }
+            meta_browsing.store(false, Ordering::SeqCst);
+            if queriers.is_empty() {
+                multicast_release(window);
+            }
+        }
+        Err(err) => {
+            log::error!("Failed to lock running queriers: {err:?}");
+        }
+    }
+}
+
+/// Drops a failed instance browse and releases the native lock when
+/// nothing browses anymore.
+fn reconcile_querier_exit<R: Runtime>(
+    window: &Window<R>,
+    queriers: &Arc<Mutex<HashSet<String>>>,
+    meta_browsing: &Arc<AtomicBool>,
+    service_type: &str,
+) {
+    match queriers.lock() {
+        Ok(mut queriers) => {
+            queriers.remove(service_type);
+            if queriers.is_empty() && !meta_browsing.load(Ordering::SeqCst) {
+                multicast_release(window);
+            }
+        }
+        Err(err) => {
+            log::error!("Failed to lock running queriers: {err:?}");
+        }
+    }
+}
+
 /// Starts service-type discovery on the meta service, emitting
 /// `service-type-found` for each valid type.
 pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Result<(), String> {
@@ -209,12 +287,27 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
     daemon
         .stop_browse(MDNS_SD_META_SERVICE)
         .map_err(|e| format!("Failed to stop browsing for {MDNS_SD_META_SERVICE}: {e:?}"))?;
+    state.meta_browsing.store(true, Ordering::SeqCst);
+    let generation = state.meta_gen.fetch_add(1, Ordering::SeqCst) + 1;
 
     let daemon = daemon.clone();
+    let queriers = state.queriers.clone();
+    let meta_browsing = state.meta_browsing.clone();
+    let meta_gen = state.meta_gen.clone();
+    {
+        let _guard = state
+            .queriers
+            .lock()
+            .map_err(|e| format!("Failed to lock running queriers: {e:?}"))?;
+        multicast_acquire(&window);
+    }
     tauri::async_runtime::spawn(async move {
         let receiver = match browse_with_retry(&daemon, MDNS_SD_META_SERVICE).await {
             Ok(receiver) => receiver,
-            Err(_) => return,
+            Err(_) => {
+                reconcile_meta_exit(&window, &queriers, &meta_browsing, &meta_gen, generation);
+                return;
+            }
         };
         while let Ok(event) = receiver.recv_async().await {
             match event {
@@ -247,12 +340,22 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
                 _ => {}
             }
         }
+        reconcile_meta_exit(&window, &queriers, &meta_browsing, &meta_gen, generation);
     });
     Ok(())
 }
 
 /// Stops all running instance browses.
-pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
+///
+/// Service-type discovery keeps running: it is the persistent watch that
+/// tells frontends which types to browse, and the Wi-Fi multicast lock
+/// stays held while it (or any instance browse) is active.
+///
+/// Entries whose daemon stop fails are kept and the failure is
+/// propagated, so the lock is never released while browsing may still
+/// be active. (`mdns-sd` only fails the stop itself on a full command
+/// channel or a dead daemon, never for an unknown service type.)
+pub fn stop_browse<R: Runtime>(window: &Window<R>, state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
         .lock()
@@ -261,13 +364,22 @@ pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
         .queriers
         .lock()
         .map_err(|e| format!("Failed to lock running queriers: {e:?}"))?;
+    let mut failed = Vec::new();
     for ty_domain in queriers.iter() {
         if let Err(e) = daemon.stop_browse(ty_domain) {
             log::error!("Failed to stop browsing for {ty_domain}: {e:?}");
+            failed.push(ty_domain.clone());
         }
+    }
+    if !failed.is_empty() {
+        queriers.retain(|ty_domain| failed.contains(ty_domain));
+        return Err(format!("Failed to stop browsing for {}", failed.join(", ")));
     }
 
     queriers.clear();
+    if !state.meta_browsing.load(Ordering::SeqCst) {
+        multicast_release(window);
+    }
     Ok(())
 }
 
@@ -278,35 +390,42 @@ pub fn browse_many<R: Runtime>(
     window: Window<R>,
     state: &ManagedState,
 ) {
-    for service_type in service_types {
-        let daemon = match state.daemon.lock() {
-            Ok(daemon) => daemon.clone(),
-            Err(err) => {
-                log::error!("Failed to lock daemon: {err:?}");
-                continue;
-            }
-        };
-        let mut queriers = match state.queriers.lock() {
-            Ok(queriers) => queriers,
-            Err(err) => {
-                log::error!("Failed to lock running queriers: {err:?}");
-                continue;
-            }
-        };
-        if !queriers.insert(service_type.clone()) {
-            continue;
+    let daemon = match state.daemon.lock() {
+        Ok(daemon) => daemon.clone(),
+        Err(err) => {
+            log::error!("Failed to lock daemon: {err:?}");
+            return;
         }
-        drop(queriers);
+    };
+    let fresh: Vec<String> = match state.queriers.lock() {
+        Ok(mut queriers) => {
+            let mut fresh = Vec::new();
+            for service_type in service_types {
+                if queriers.insert(service_type.clone()) {
+                    fresh.push(service_type);
+                }
+            }
+            if !fresh.is_empty() {
+                multicast_acquire(&window);
+            }
+            fresh
+        }
+        Err(err) => {
+            log::error!("Failed to lock running queriers: {err:?}");
+            return;
+        }
+    };
 
+    for service_type in fresh {
+        let daemon = daemon.clone();
         let queriers = state.queriers.clone();
+        let meta_browsing = state.meta_browsing.clone();
         let window = window.clone();
         tauri::async_runtime::spawn(async move {
             let receiver = match browse_with_retry(&daemon, &service_type).await {
                 Ok(receiver) => receiver,
                 Err(_) => {
-                    if let Ok(mut queriers) = queriers.lock() {
-                        queriers.remove(&service_type);
-                    }
+                    reconcile_querier_exit(&window, &queriers, &meta_browsing, &service_type);
                     return;
                 }
             };
