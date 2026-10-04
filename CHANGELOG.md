@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.3.1...tauri-plugin-mdns-v0.3.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* raise Android compileSdk to 37 for androidx.core 1.19 ([#43](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/43)) ([f7b350b](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/f7b350b8aba960724619d3e17b69b47474a8017d))
+
+
+### Miscellaneous Chores
+
+* check release AAR metadata in Android CI ([#45](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/45)) ([7813fa7](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/7813fa70b22c6d1f1f5dced10d33180d7e74c984))
+
 ## [0.3.1](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.3.0...tauri-plugin-mdns-v0.3.1) (2026-10-04)
 
 

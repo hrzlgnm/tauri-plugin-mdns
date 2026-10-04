@@ -3335,7 +3335,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-mdns"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ipconfig",
  "log",
