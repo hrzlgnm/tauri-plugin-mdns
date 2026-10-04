@@ -16,7 +16,8 @@
         ":prImmediately",
         ":rebaseStalePrs",
         ":semanticCommits",
-        ":semanticPrefixFixDepsChoreOthers",
+        ":semanticCommitTypeAll(deps)",
+        ":semanticCommitScopeDisabled",
         ":separateMajorReleases",
     ],
 }
