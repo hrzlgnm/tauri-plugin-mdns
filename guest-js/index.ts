@@ -114,7 +114,7 @@ export async function browseMany(serviceTypes: Array<string>): Promise<void> {
     return invoke('plugin:mdns|browse_many', { serviceTypes });
 }
 
-/** Stops all running instance browses. */
+/** Stops all running browses (service-type and instance browsing). */
 export async function stopBrowse(): Promise<void> {
     return invoke('plugin:mdns|stop_browse');
 }

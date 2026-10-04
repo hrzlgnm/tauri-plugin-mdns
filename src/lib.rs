@@ -21,7 +21,9 @@
 //! consent flow through [`commands::local_network_status`] and
 //! [`commands::request_local_network_access`]; the declaration travels in
 //! the plugin manifest and is merged into the host app, surviving
-//! `tauri android init`.
+//! `tauri android init`. While browsing, the plugin holds a Wi-Fi
+//! multicast lock (via `CHANGE_WIFI_MULTICAST_STATE`) so multicast
+//! packets keep flowing; it is released once nothing browses anymore.
 //!
 //! [`mdns-sd`]: https://docs.rs/mdns-sd
 

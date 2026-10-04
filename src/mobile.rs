@@ -75,4 +75,21 @@ impl<R: Runtime> Mdns<R> {
     pub fn local_network_granted(&self) -> Result<bool, String> {
         Ok(self.local_network_state()?.is_granted())
     }
+
+    /// Holds the Wi-Fi multicast lock so mDNS packets keep flowing while
+    /// browsing. Best effort: logs but never fails the browse, as some
+    /// devices still resolve without the lock in the foreground.
+    pub fn acquire_multicast_lock(&self) {
+        if let Err(e) = self.0.run_mobile_plugin::<()>("acquireMulticastLock", ()) {
+            log::warn!("failed to acquire multicast lock: {e:?}, continuing anyway");
+        }
+    }
+
+    /// Releases the Wi-Fi multicast lock once nothing browses anymore.
+    /// Best effort: logs but never fails the stop.
+    pub fn release_multicast_lock(&self) {
+        if let Err(e) = self.0.run_mobile_plugin::<()>("releaseMulticastLock", ()) {
+            log::warn!("failed to release multicast lock: {e:?}, continuing anyway");
+        }
+    }
 }

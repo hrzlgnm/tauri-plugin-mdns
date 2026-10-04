@@ -59,6 +59,7 @@ async fn browse_with_retry(
 pub struct ManagedState {
     daemon: SharedServiceDaemon,
     queriers: Arc<Mutex<HashSet<String>>>,
+    meta_browsing: AtomicBool,
     metrics_subscribed: AtomicBool,
     interfaces_subscribed: AtomicBool,
     ipv4_enabled: AtomicBool,
@@ -71,6 +72,7 @@ impl ManagedState {
         Self {
             daemon: initialize_shared_daemon(),
             queriers: Arc::new(Mutex::new(HashSet::new())),
+            meta_browsing: AtomicBool::new(false),
             metrics_subscribed: AtomicBool::new(false),
             interfaces_subscribed: AtomicBool::new(false),
             ipv4_enabled: AtomicBool::new(true),
@@ -209,6 +211,7 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
     daemon
         .stop_browse(MDNS_SD_META_SERVICE)
         .map_err(|e| format!("Failed to stop browsing for {MDNS_SD_META_SERVICE}: {e:?}"))?;
+    state.meta_browsing.store(true, Ordering::SeqCst);
 
     let daemon = daemon.clone();
     tauri::async_runtime::spawn(async move {
@@ -251,7 +254,12 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
     Ok(())
 }
 
-/// Stops all running instance browses.
+/// Stops all running browses (service-type and instance browsing).
+///
+/// Service-type discovery has no separate stop command: it restarts on
+/// every `browse_types` call, so stopping it here is what makes the
+/// `N -> 0` transition — and with it the Wi-Fi multicast lock release —
+/// reachable.
 pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
@@ -268,7 +276,30 @@ pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
     }
 
     queriers.clear();
+    if state.meta_browsing.swap(false, Ordering::SeqCst) {
+        if let Err(e) = daemon.stop_browse(MDNS_SD_META_SERVICE) {
+            log::error!("Failed to stop browsing for {MDNS_SD_META_SERVICE}: {e:?}");
+        }
+    }
     Ok(())
+}
+
+/// Whether any discovery is active (service-type or instance browsing).
+///
+/// The Wi-Fi multicast lock must stay held on Android while this is true.
+/// A poisoned querier lock conservatively reports active so the lock is
+/// never released while browsing may still run.
+pub fn has_active_browses(state: &ManagedState) -> bool {
+    if state.meta_browsing.load(Ordering::SeqCst) {
+        return true;
+    }
+    match state.queriers.lock() {
+        Ok(queriers) => !queriers.is_empty(),
+        Err(err) => {
+            log::error!("Failed to lock running queriers: {err:?}");
+            true
+        }
+    }
 }
 
 /// Starts instance browsing for each given service type, emitting
