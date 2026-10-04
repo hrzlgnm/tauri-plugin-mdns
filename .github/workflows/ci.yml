@@ -139,6 +139,12 @@ jobs:
         shell: bash
         run: cargo clippy --target aarch64-linux-android --all-targets -- -D warnings
 
+  android-apk:
+    # Compiles the Android Kotlin via the example debug APK build;
+    # see test-android.yml (mirrors tauri-apps/plugins-workspace).
+    name: "🤖 android-apk"
+    uses: ./.github/workflows/test-android.yml
+
   all-required-green: # This job does nothing and is only used for the branch protection
     name: CI Status
     runs-on: ubuntu-latest
@@ -147,6 +153,7 @@ jobs:
       - clippy
       - test
       - android
+      - android-apk
       - js
       - typos
     if: always()

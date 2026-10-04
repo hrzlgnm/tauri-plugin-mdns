@@ -4,3 +4,8 @@
 /target
 /dist-js/
 node_modules/
+
+# Android example app: the generated project and build outputs are
+# recreated in CI via `tauri android init` + `tauri android build`
+examples/api/src-tauri/gen/
+examples/api/src-tauri/target/

@@ -1,0 +1,19 @@
+# Copyright 2026 hrzlgnm
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "mdns-example"
+publish = false
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "mdns_example_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-mdns = { path = "../../.." }

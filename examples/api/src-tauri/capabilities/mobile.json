@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "mDNS permissions for the Android example",
+  "windows": ["main"],
+  "platforms": ["android"],
+  "permissions": ["mdns:default"]
+}
