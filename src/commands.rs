@@ -9,7 +9,7 @@
 //! [`request_local_network_access`] and gate their UI on a blocking
 //! denied state.
 
-use tauri::{AppHandle, Manager, Runtime, State, Window};
+use tauri::{AppHandle, Runtime, State, Window};
 
 use crate::{
     engine::{self, ManagedState},
@@ -32,8 +32,9 @@ fn ensure_local_network_access<R: Runtime>(mdns: &Mdns<R>) -> Result<(), String>
 
 /// Starts service-type discovery, emitting `service-type-found` events.
 ///
-/// Holds the Android Wi-Fi multicast lock while browsing so discovery
-/// stays alive; the lock is released once nothing browses anymore.
+/// The engine holds the Android Wi-Fi multicast lock while browsing so
+/// discovery stays alive; the lock is released once nothing browses
+/// anymore.
 #[tauri::command]
 pub async fn browse_types<R: Runtime>(
     window: Window<R>,
@@ -41,28 +42,20 @@ pub async fn browse_types<R: Runtime>(
     state: State<'_, ManagedState>,
 ) -> Result<(), String> {
     ensure_local_network_access(&mdns)?;
-    engine::browse_types(window, &state)?;
-    mdns.acquire_multicast_lock();
-    Ok(())
+    engine::browse_types(window, &state)
 }
 
 /// Stops all running instance browses.
 ///
-/// Releases the Android Wi-Fi multicast lock once nothing browses
-/// anymore; service-type discovery keeps running (and the lock stays
-/// held while it does). The handle comes from the window rather than
-/// an injected `State<Mdns<R>>`: the command macro cannot infer `R`
-/// from that state type alone.
+/// The engine releases the Android Wi-Fi multicast lock once nothing
+/// browses anymore; service-type discovery keeps running (and the lock
+/// stays held while it does).
 #[tauri::command]
 pub fn stop_browse<R: Runtime>(
     window: Window<R>,
     state: State<'_, ManagedState>,
 ) -> Result<(), String> {
-    engine::stop_browse(&state)?;
-    if !engine::has_active_browses(&state) {
-        window.state::<Mdns<R>>().inner().release_multicast_lock();
-    }
-    Ok(())
+    engine::stop_browse(&window, &state)
 }
 
 /// Verifies that an instance is still present on the network.
@@ -74,8 +67,9 @@ pub fn verify(instance_fullname: String, state: State<'_, ManagedState>) -> Resu
 /// Starts instance browsing for each given service type, emitting
 /// `service-resolved` and `service-removed` events.
 ///
-/// Holds the Android Wi-Fi multicast lock while browsing so discovery
-/// stays alive; the lock is released once nothing browses anymore.
+/// The engine holds the Android Wi-Fi multicast lock while browsing so
+/// discovery stays alive; the lock is released once nothing browses
+/// anymore.
 #[tauri::command]
 pub async fn browse_many<R: Runtime>(
     service_types: Vec<String>,
@@ -84,10 +78,7 @@ pub async fn browse_many<R: Runtime>(
     state: State<'_, ManagedState>,
 ) -> Result<(), String> {
     ensure_local_network_access(&mdns)?;
-    if !service_types.is_empty() {
-        engine::browse_many(service_types, window, &state);
-        mdns.acquire_multicast_lock();
-    }
+    engine::browse_many(service_types, window, &state);
     Ok(())
 }
 
