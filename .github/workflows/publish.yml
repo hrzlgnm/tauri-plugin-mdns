@@ -120,16 +120,19 @@ jobs:
           fi
           echo "Version: $NPM_VERSION"
 
-      - name: 📦 Publish to npm
+      - name: 📦 Stage publish to npm
         if: inputs.publish && !inputs.dry_run
         shell: bash
-        # No auth token: npm exchanges the GitHub OIDC token via the
-        # trusted publisher registered for this package on npmjs.com.
+        # Staged publishing: the package lands on the registry
+        # unavailable for public access and needs no 2FA here;
+        # a maintainer approves it later (`npm stage approve`,
+        # 2FA at approval time). Scope the npm trust relationship
+        # to stage-publish only.
         run: |
           set -euo pipefail
           npm ci
           npm run build
-          npm publish --provenance --access public
+          npm stage publish
 
       - name: 📦 Dry-run publish to npm
         if: inputs.dry_run
