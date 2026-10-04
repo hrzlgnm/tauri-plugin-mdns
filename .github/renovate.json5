@@ -19,4 +19,20 @@
         ":semanticPrefixFixDepsChoreOthers",
         ":separateMajorReleases",
     ],
+    packageRules: [
+        {
+            description: "Use bare deps prefix so release-please sorts dependency updates under Dependencies",
+            matchUpdateTypes: [
+                "major",
+                "minor",
+                "patch",
+                "pin",
+                "pinDigest",
+                "digest",
+                "lockFileMaintenance",
+            ],
+            semanticCommitType: "deps",
+            semanticCommitScope: "",
+        },
+    ],
 }
