@@ -111,6 +111,34 @@ jobs:
         shell: bash
         run: npm run build
 
+  android:
+    name: "🤖 android"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          components: clippy
+          targets: aarch64-linux-android
+
+      - name: 🛠️🚀
+        uses: ./.github/actions/setup-sccache
+
+      # Desktop jobs never compile the `#[cfg(mobile)]` code, so
+      # clippy the Android target to cover the mobile runtime path
+      # (`src/mobile.rs`, `target_os = "android"`). No NDK or linker
+      # is needed as clippy only checks; `-D warnings` keeps the
+      # mobile path lint-clean like its desktop counterpart.
+      - name: 🤖 Run clippy for the Android target and fail if any warnings
+        shell: bash
+        run: cargo clippy --target aarch64-linux-android --all-targets -- -D warnings
+
   all-required-green: # This job does nothing and is only used for the branch protection
     name: CI Status
     runs-on: ubuntu-latest
@@ -118,6 +146,7 @@ jobs:
       - fmt
       - clippy
       - test
+      - android
       - js
       - typos
     if: always()
