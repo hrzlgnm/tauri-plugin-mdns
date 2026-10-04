@@ -5,8 +5,10 @@
 # official Tauri plugins do: `tauri android init` scaffolds the
 # project (nothing under examples/api/src-tauri/gen is committed)
 # and `tauri android build` compiles it into a debug APK.
-# No build-artifact caches on purpose, mirroring plugins-workspace.
-# (The npm registry cache only speeds dependency download, so it stays.)
+# No build-artifact (target/, Gradle) caches on purpose, mirroring
+# plugins-workspace. (The npm registry cache only speeds dependency
+# download, so it stays.) sccache stays enabled for the Rust
+# compilation inside `tauri android build` via the GitHub cache backend.
 #
 # Reusable workflow: called from the `android-apk` job in ci.yml so
 # the APK build is part of the required CI Status check.
@@ -23,6 +25,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write # needed for sccache's GitHub cache backend
 
 jobs:
   test:
@@ -39,6 +42,9 @@ jobs:
         uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: 🛠️🚀
+        uses: ./.github/actions/setup-sccache
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
