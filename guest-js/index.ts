@@ -4,6 +4,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
+/**
+ * Fully-qualified service-type names (e.g. `_http._tcp.local.`),
+ * mirroring the plugin's `ServiceTypes` Rust alias.
+ */
+export type ServiceTypes = Array<string>;
+
 /** A discovered TXT record: `key` alone, or `key=value`. */
 export interface TxtRecord {
     key: string;
