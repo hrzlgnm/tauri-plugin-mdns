@@ -48,7 +48,7 @@ impl<R: Runtime> Mdns<R> {
     fn parse_state(state: &HashMap<String, String>) -> LocalNetworkState {
         state
             .get(LOCAL_NETWORK_ALIAS)
-            .map(LocalNetworkState::parse)
+            .map(|state| LocalNetworkState::parse(state))
             .unwrap_or(LocalNetworkState::Denied)
     }
 
