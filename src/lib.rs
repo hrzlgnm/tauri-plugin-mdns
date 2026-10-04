@@ -3,8 +3,9 @@
 
 //! # tauri-plugin-mdns
 //!
-//! mDNS service discovery (browse) for Tauri apps on desktop and mobile,
-//! backed by the [`mdns-sd`] crate in Rust on every platform.
+//! mDNS service discovery (browse) for Tauri apps on desktop and Android,
+//! backed by the [`mdns-sd`] crate in Rust on every supported platform.
+//! iOS is not supported and there are no plans to support it.
 //!
 //! The plugin registers its commands under the `plugin:mdns|` namespace;
 //! grant the plugin's `default` permission in the app's capabilities so

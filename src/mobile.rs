@@ -1,14 +1,16 @@
 // Copyright 2026 hrzlgnm
 // SPDX-License-Identifier: MIT
 
-//! Access to the native mobile plugin layer.
+//! Access to the native Android plugin layer.
 //!
 //! The only native surface the engine needs is the Android
 //! `localNetwork` runtime permission (declared in the plugin manifest,
 //! requested through the auto-implemented `checkPermissions` /
-//! `requestPermissions` commands). iOS registers no native plugin and
-//! reports granted: local-network access there is covered by the app's
-//! `Info.plist` keys.
+//! `requestPermissions` commands). iOS is not supported and there are
+//! no plans to support it.
+
+#[cfg(target_os = "ios")]
+compile_error!("tauri-plugin-mdns does not support iOS; desktop and Android only.");
 
 use super::{models::LocalNetworkState, LOCAL_NETWORK_ALIAS};
 use std::collections::HashMap;
@@ -20,9 +22,8 @@ use tauri::{
 };
 
 /// Handle to the native plugin layer.
-pub struct Mdns<R: Runtime>(Option<PluginHandle<R>>);
+pub struct Mdns<R: Runtime>(PluginHandle<R>);
 
-#[cfg(target_os = "android")]
 pub fn init<R: Runtime, C: DeserializeOwned>(
     _app: &AppHandle<R>,
     api: PluginApi<R, C>,
@@ -33,15 +34,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
             log::error!("failed to register Android mdns plugin: {e:?}");
             format!("failed to register Android mdns plugin: {e:?}")
         })?;
-    Ok(Mdns(Some(handle)))
-}
-
-#[cfg(target_os = "ios")]
-pub fn init<R: Runtime, C: DeserializeOwned>(
-    _app: &AppHandle<R>,
-    _api: PluginApi<R, C>,
-) -> Result<Mdns<R>, String> {
-    Ok(Mdns(None))
+    Ok(Mdns(handle))
 }
 
 impl<R: Runtime> Mdns<R> {
@@ -54,36 +47,28 @@ impl<R: Runtime> Mdns<R> {
 
     /// Reports the native `localNetwork` permission state.
     pub fn local_network_state(&self) -> Result<LocalNetworkState, String> {
-        match &self.0 {
-            Some(handle) => handle
-                .run_mobile_plugin::<HashMap<String, String>>("checkPermissions", ())
-                .map(|state| Self::parse_state(&state))
-                .map_err(|e| {
-                    log::error!("failed to check local network permission: {e:?}");
-                    format!("failed to check local network permission: {e:?}")
-                }),
-            // No native layer (e.g. iOS): access is covered elsewhere.
-            None => Ok(LocalNetworkState::Granted),
-        }
+        self.0
+            .run_mobile_plugin::<HashMap<String, String>>("checkPermissions", ())
+            .map(|state| Self::parse_state(&state))
+            .map_err(|e| {
+                log::error!("failed to check local network permission: {e:?}");
+                format!("failed to check local network permission: {e:?}")
+            })
     }
 
     /// Requests the native `localNetwork` permission and reports the
     /// resulting state.
     pub fn request_local_network_access(&self) -> Result<LocalNetworkState, String> {
-        match &self.0 {
-            Some(handle) => handle
-                .run_mobile_plugin::<HashMap<String, String>>(
-                    "requestPermissions",
-                    serde_json::json!({ "permissions": [LOCAL_NETWORK_ALIAS] }),
-                )
-                .map(|state| Self::parse_state(&state))
-                .map_err(|e| {
-                    log::error!("failed to request local network permission: {e:?}");
-                    format!("failed to request local network permission: {e:?}")
-                }),
-            // No native layer (e.g. iOS): nothing to request.
-            None => Ok(LocalNetworkState::Granted),
-        }
+        self.0
+            .run_mobile_plugin::<HashMap<String, String>>(
+                "requestPermissions",
+                serde_json::json!({ "permissions": [LOCAL_NETWORK_ALIAS] }),
+            )
+            .map(|state| Self::parse_state(&state))
+            .map_err(|e| {
+                log::error!("failed to request local network permission: {e:?}");
+                format!("failed to request local network permission: {e:?}")
+            })
     }
 
     /// Whether browsing may proceed given the current permission state.
