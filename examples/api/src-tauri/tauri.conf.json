@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "mdns-example",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "identifier": "com.hrzlgnm.mdns.example",
   "build": {
     "frontendDist": "../dist"
