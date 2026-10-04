@@ -40,6 +40,7 @@ jobs:
               - 'Cargo.toml'
               - 'Cargo.lock'
               - '.github/workflows/ci.yml'
+              - '.github/actions/setup-sccache/**'
             bindings:
               - 'guest-js/**'
               - 'package.json'
@@ -224,4 +225,10 @@ jobs:
           jobs: ${{ toJSON(needs) }}
           # Every job gated by the `changes` outputs may legitimately
           # skip; `changes` and `typos` always run and must succeed.
-          allowed-skips: fmt, clippy, test, android, android-apk, bindings
+          allowed-skips: >-
+            fmt,
+            clippy,
+            test,
+            android,
+            android-apk,
+            bindings
