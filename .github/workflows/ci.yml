@@ -14,7 +14,7 @@ jobs:
   typos:
     name: "📝 Check typos"
     if: always()
-    uses: hrzlgnm/actions/.github/workflows/typos-reusable.yml@275b5f2d90d762bd71567db08b250d8ba7cdb274 # v2.14.4
+    uses: hrzlgnm/actions/.github/workflows/typos-reusable.yml@c4634c8090f9c2941bbad01a692e2dd4fc91416c # v2.14.10
 
   fmt:
     name: "📐 fmt"
