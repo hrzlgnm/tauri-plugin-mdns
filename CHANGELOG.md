@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.4...tauri-plugin-mdns-v0.2.5) (2026-10-04)
+
+
+### Bug Fixes
+
+* drop wrong PermissionState import in Android plugin class ([#16](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/16)) ([c13476c](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/c13476c15217ed0ce7e072efd35014692b7c62f3))
+
 ## [0.2.4](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.3...tauri-plugin-mdns-v0.2.4) (2026-10-04)
 
 
