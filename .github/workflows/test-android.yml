@@ -95,3 +95,14 @@ jobs:
         run: ./node_modules/.bin/tauri android build --debug
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: 🧾 Check release AAR metadata
+        # The debug build above only exercises the debug variant, but AAR
+        # metadata (e.g. androidx minCompileSdk) is verified per variant:
+        # core-ktx 1.19.1 failed checkReleaseAarMetadata while debug stayed
+        # green. The plugin module is wired into the scaffolded project by
+        # the build above, so verify its release metadata directly to stop
+        # future dependency bumps slipping through again.
+        shell: bash
+        working-directory: examples/api/src-tauri/gen/android
+        run: sh gradlew :tauri-plugin-mdns:checkReleaseAarMetadata
