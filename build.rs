@@ -16,5 +16,13 @@ const COMMANDS: &[&str] = &[
 ];
 
 fn main() {
-    tauri_plugin::Builder::new(COMMANDS).build();
+    // The android path wires the plugin's native module (manifest with the
+    // ACCESS_LOCAL_NETWORK declaration, Kotlin permission layer) into the
+    // host app: the build script emits DEP_*_ANDROID_LIBRARY_PATH, which
+    // the app's tauri-build turns into tauri.settings.gradle. Without it
+    // the Rust engine builds but native calls and the manifest merge
+    // silently never happen.
+    tauri_plugin::Builder::new(COMMANDS)
+        .android_path("android")
+        .build();
 }
