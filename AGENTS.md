@@ -70,10 +70,11 @@ dropped packages without proving a `-sys` crate re-entered the graph.
   Android 17 (API 37), where the permission does not exist and access
   is implicitly granted; requesting an unknown permission there would
   misreport.
-- The library keeps `compileSdk = 36` and refers to the permission
-  by string literal, so it builds against older and current AGP
-  alike. `consumer-rules.pro` keeps the reflectively-loaded plugin
-  class across the host app's release minification.
+- The library keeps `compileSdk = 37` (required by androidx.core 1.19+)
+  and refers to the permission by string literal, so it compiles without
+  referencing the API-37-only constant. `consumer-rules.pro` keeps the
+  reflectively-loaded plugin class across the host app's release
+  minification.
 - No `ios/` directory and no iOS support by design: the mobile
   engine is Android-only and iOS builds fail with an explicit
   `compile_error!` in `src/mobile.rs`. Never add iOS shims,

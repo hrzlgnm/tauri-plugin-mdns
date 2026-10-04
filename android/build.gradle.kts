@@ -12,7 +12,7 @@ repositories {
 
 android {
     namespace = "com.hrzlgnm.mdns"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 24
