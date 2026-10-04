@@ -46,12 +46,13 @@ pub async fn browse_types<R: Runtime>(
     Ok(())
 }
 
-/// Stops all running browses (service-type and instance browsing).
+/// Stops all running instance browses.
 ///
 /// Releases the Android Wi-Fi multicast lock once nothing browses
-/// anymore. The handle comes from the window rather than an injected
-/// `State<Mdns<R>>`: the command macro cannot infer `R` from that state
-/// type alone.
+/// anymore; service-type discovery keeps running (and the lock stays
+/// held while it does). The handle comes from the window rather than
+/// an injected `State<Mdns<R>>`: the command macro cannot infer `R`
+/// from that state type alone.
 #[tauri::command]
 pub fn stop_browse<R: Runtime>(
     window: Window<R>,

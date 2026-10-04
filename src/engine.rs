@@ -254,12 +254,11 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
     Ok(())
 }
 
-/// Stops all running browses (service-type and instance browsing).
+/// Stops all running instance browses.
 ///
-/// Service-type discovery has no separate stop command: it restarts on
-/// every `browse_types` call, so stopping it here is what makes the
-/// `N -> 0` transition — and with it the Wi-Fi multicast lock release —
-/// reachable.
+/// Service-type discovery keeps running: it is the persistent watch that
+/// tells frontends which types to browse, and the Wi-Fi multicast lock
+/// stays held while it (or any instance browse) is active.
 pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
@@ -276,11 +275,6 @@ pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
     }
 
     queriers.clear();
-    if state.meta_browsing.swap(false, Ordering::SeqCst) {
-        if let Err(e) = daemon.stop_browse(MDNS_SD_META_SERVICE) {
-            log::error!("Failed to stop browsing for {MDNS_SD_META_SERVICE}: {e:?}");
-        }
-    }
     Ok(())
 }
 
