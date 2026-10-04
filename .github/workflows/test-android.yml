@@ -5,22 +5,16 @@
 # official Tauri plugins do: `tauri android init` scaffolds the
 # project (nothing under examples/api/src-tauri/gen is committed)
 # and `tauri android build` compiles it into a debug APK.
-# No build-artifact caches on purpose, mirroring plugins-workspace:
-# this workflow only runs on pull requests, so anything it saved would
-# live on the merge ref where no other run can restore it. (The npm
-# registry cache above only speeds dependency download, so it stays.)
+# No build-artifact caches on purpose, mirroring plugins-workspace.
+# (The npm registry cache only speeds dependency download, so it stays.)
+#
+# Reusable workflow: called from the `android-apk` job in ci.yml so
+# the APK build is part of the required CI Status check.
 
 name: "test android"
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/test-android.yml"
-      - "android/**"
-      - "examples/api/**"
-      - "src/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
