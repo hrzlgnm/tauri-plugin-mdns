@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.1...tauri-plugin-mdns-v0.2.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* use explicit closure for permission state parsing ([#10](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/10)) ([1649d55](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/1649d55313e7001c5ed5d67bd9ac4dad79c5ce30))
+
 ## [0.2.1](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.0...tauri-plugin-mdns-v0.2.1) (2026-10-04)
 
 
