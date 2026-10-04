@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.2...tauri-plugin-mdns-v0.2.3) (2026-10-04)
+
+
+### Bug Fixes
+
+* declare android project path in plugin build ([#12](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/12)) ([6fdbd3e](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/6fdbd3e6928d8bbb7456527062f75515fe874ca4))
+
 ## [0.2.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.1...tauri-plugin-mdns-v0.2.2) (2026-10-04)
 
 
