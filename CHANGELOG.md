@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.5...tauri-plugin-mdns-v0.3.0) (2026-10-04)
+
+
+### Features
+
+* export ServiceTypes from the JavaScript API ([#20](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/20)) ([9a18edb](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/9a18edb8cedab6f21d4f7aa724b34c1e560d3ad6))
+
 ## [0.2.5](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.2.4...tauri-plugin-mdns-v0.2.5) (2026-10-04)
 
 
