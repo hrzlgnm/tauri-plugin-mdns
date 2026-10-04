@@ -1,0 +1,13 @@
+{
+    "name": "mdns-example",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "description": "Minimal consumer of tauri-plugin-mdns; exists so CI compiles the Android Kotlin via tauri android build",
+    "scripts": {
+        "tauri": "tauri"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "2.12.1"
+    }
+}
