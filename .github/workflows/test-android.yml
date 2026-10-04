@@ -85,9 +85,13 @@ jobs:
           done
 
       - name: 🏗️ Scaffold Android project
+        # Via npx (not ./node_modules/.bin/tauri): init records how the
+        # CLI was invoked into BuildTask.kt, and only the npx/npm form
+        # resolves at Gradle build time. A direct binary call bakes in
+        # `node tauri ...`, which fails with MODULE_NOT_FOUND.
         shell: bash
         working-directory: examples/api
-        run: ./node_modules/.bin/tauri android init
+        run: npx tauri android init
 
       - name: 🤖 Build debug APK
         shell: bash
