@@ -17,7 +17,9 @@ tauri-plugin = { version = "2", features = ["build"] }
 
 [dependencies]
 log = "0.4"
-mdns-sd = "0.21"
+# Exact pin so downstream lockfiles resolve this mdns-sd release;
+# Cargo then forces the transitive bump on every plugin update.
+mdns-sd = "=0.21.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_with = "3"
