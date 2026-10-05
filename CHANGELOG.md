@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.0...tauri-plugin-mdns-v0.4.1) (2026-10-05)
+
+
+### Dependencies
+
+* lock file maintenance ([#50](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/50)) ([68122c3](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/68122c3a7577e5e4c4caa9df9c0d150e282d36c1))
+* update rust crate mdns-sd to v0.21.5 ([#48](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/48)) ([8a8cd00](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/8a8cd008dd9f0ed073bf647f1df49e9489333790))
+
 ## [0.4.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.3.2...tauri-plugin-mdns-v0.4.0) (2026-10-04)
 
 
