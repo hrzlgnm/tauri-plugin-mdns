@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.1...tauri-plugin-mdns-v0.4.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* pin mdns-sd to exact version ([#51](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/51)) ([0fd06dd](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/0fd06ddfd88b09f16f8f76587ce5450ba5f82992))
+* remove Android multicast lock while browsing ([#55](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/55)) ([f4a5bf6](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/f4a5bf6e9f92f3cf4f26d90b14cd31eb742120c0))
+
+
+### Dependencies
+
+* update dependency rollup to v4.64.0 ([#54](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/54)) ([3905c47](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/3905c47c157b41e1952dd8fdced469720eb0562d))
+* update hrzlgnm/actions action to v2.14.11 ([#53](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/53)) ([79bd34f](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/79bd34f0b537b1ff78204b17f04ac435799459e7))
+
 ## [0.4.1](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.0...tauri-plugin-mdns-v0.4.1) (2026-10-05)
 
 
