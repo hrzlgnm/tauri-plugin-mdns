@@ -4,12 +4,8 @@
 package com.hrzlgnm.mdns
 
 import android.app.Activity
-import android.content.Context
-import android.net.wifi.WifiManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import app.tauri.PermissionState
-import app.tauri.annotation.Command
 import app.tauri.annotation.Permission
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
@@ -23,20 +19,12 @@ const val PERMISSION_ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NET
 // Referenced as literals: the permission constant only exists in API 37+.
 const val ANDROID_17_API_LEVEL = 37
 
-const val MULTICAST_LOCK_TAG = "tauri-plugin-mdns:discovery"
-
 @TauriPlugin(
   permissions = [
     Permission(strings = [PERMISSION_ACCESS_LOCAL_NETWORK], alias = LOCAL_NETWORK_ALIAS)
   ]
 )
-class MdnsPlugin(private val activity: Activity) : Plugin(activity) {
-  // Held while mDNS browsing is active so the Wi-Fi stack keeps delivering
-  // multicast packets (the mdns-sd engine uses raw sockets, not NsdManager).
-  // Non-reference-counted with isHeld guards: the Rust side acquires on
-  // every browse start and releases once nothing browses anymore, so both
-  // entry points stay idempotent and self-healing across activity restarts.
-  private var multicastLock: WifiManager.MulticastLock? = null
+class MdnsPlugin(activity: Activity) : Plugin(activity) {
 
   // Overrides are deliberately not re-annotated with @Command: the
   // base-class registrations plus virtual dispatch already route to them.
@@ -56,60 +44,6 @@ class MdnsPlugin(private val activity: Activity) : Plugin(activity) {
       invoke.resolve(grantedState())
     } else {
       super.requestPermissions(invoke)
-    }
-  }
-
-  @Command
-  fun acquireMulticastLock(invoke: Invoke) {
-    try {
-      synchronized(this) {
-        var lock = multicastLock
-        if (lock == null) {
-          val wifi =
-            activity.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-          lock = wifi.createMulticastLock(MULTICAST_LOCK_TAG).apply {
-            setReferenceCounted(false)
-          }
-          multicastLock = lock
-        }
-        if (!lock.isHeld) {
-          lock.acquire()
-        }
-      }
-      invoke.resolve()
-    } catch (e: Exception) {
-      invoke.reject("Failed to acquire multicast lock: ${e.message}")
-    }
-  }
-
-  @Command
-  fun releaseMulticastLock(invoke: Invoke) {
-    try {
-      releaseMulticastLockIfHeld()
-      invoke.resolve()
-    } catch (e: Exception) {
-      invoke.reject("Failed to release multicast lock: ${e.message}")
-    }
-  }
-
-  override fun onDestroy(activity: AppCompatActivity) {
-    super.onDestroy(activity)
-    // Never leak the lock across activity teardown; the next browse start
-    // re-acquires it.
-    try {
-      releaseMulticastLockIfHeld()
-    } catch (_: Exception) {
-      // Best effort on teardown.
-    }
-  }
-
-  private fun releaseMulticastLockIfHeld() {
-    synchronized(this) {
-      multicastLock?.let {
-        if (it.isHeld) {
-          it.release()
-        }
-      }
     }
   }
 

@@ -20,9 +20,7 @@ runtime permission, which Android 17 mandates for apps targeting SDK
 default, so browsing refuses to start while access is not granted. The
 permission declaration travels in the plugin manifest (merged into the
 host app, surviving `tauri android init`); the consent flow is driven
-from the frontend (see below). While browsing, the plugin holds a Wi-Fi
-multicast lock so mDNS discovery stays alive; it is released once
-nothing browses anymore.
+from the frontend (see below).
 
 ## Quick Start
 

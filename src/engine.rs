@@ -15,11 +15,11 @@ use std::{
     collections::{BTreeSet, HashMap, HashSet},
     net::IpAddr,
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, Ordering},
         Arc, Mutex,
     },
 };
-use tauri::{Emitter, Manager, Runtime, Window};
+use tauri::{Emitter, Runtime, Window};
 
 type SharedServiceDaemon = Arc<Mutex<ServiceDaemon>>;
 
@@ -58,17 +58,8 @@ async fn browse_with_retry(
 
 pub struct ManagedState {
     daemon: SharedServiceDaemon,
-    /// Active instance-browse service types. Its mutex doubles as the
-    /// browse-lifecycle coordination lock: every transition that starts
-    /// or stops discovery holds it across the state change *and* the
-    /// native multicast-lock call, so a stop's check-and-release cannot
-    /// interleave with a concurrent start's insert-and-acquire.
+    /// Active instance-browse service types.
     queriers: Arc<Mutex<HashSet<String>>>,
-    meta_browsing: Arc<AtomicBool>,
-    /// Generation counter for service-type browsing. Each `browse_types`
-    /// call bumps it, so a superseded browse task ending later cannot
-    /// clear fresh state or release the lock out from under it.
-    meta_gen: Arc<AtomicU64>,
     metrics_subscribed: AtomicBool,
     interfaces_subscribed: AtomicBool,
     ipv4_enabled: AtomicBool,
@@ -81,8 +72,6 @@ impl ManagedState {
         Self {
             daemon: initialize_shared_daemon(),
             queriers: Arc::new(Mutex::new(HashSet::new())),
-            meta_browsing: Arc::new(AtomicBool::new(false)),
-            meta_gen: Arc::new(AtomicU64::new(0)),
             metrics_subscribed: AtomicBool::new(false),
             interfaces_subscribed: AtomicBool::new(false),
             ipv4_enabled: AtomicBool::new(true),
@@ -210,65 +199,12 @@ where
     }
 }
 
-/// Acquires the native Wi-Fi multicast lock (no-op off Android).
-/// Call only while holding the coordination lock.
-fn multicast_acquire<R: Runtime>(window: &Window<R>) {
-    window
-        .state::<crate::Mdns<R>>()
-        .inner()
-        .acquire_multicast_lock();
-}
-
-/// Releases the native Wi-Fi multicast lock (no-op off Android).
-/// Call only while holding the coordination lock.
-fn multicast_release<R: Runtime>(window: &Window<R>) {
-    window
-        .state::<crate::Mdns<R>>()
-        .inner()
-        .release_multicast_lock();
-}
-
-/// Reconciles service-type browsing state when its task ends (startup
-/// failure or channel end), then releases the native lock when nothing
-/// browses anymore. A task superseded by a newer `browse_types` call
-/// leaves state alone: the newer browse owns the flag and the lock.
-fn reconcile_meta_exit<R: Runtime>(
-    window: &Window<R>,
-    queriers: &Arc<Mutex<HashSet<String>>>,
-    meta_browsing: &Arc<AtomicBool>,
-    meta_gen: &Arc<AtomicU64>,
-    generation: u64,
-) {
-    match queriers.lock() {
-        Ok(queriers) => {
-            if meta_gen.load(Ordering::SeqCst) != generation {
-                return;
-            }
-            meta_browsing.store(false, Ordering::SeqCst);
-            if queriers.is_empty() {
-                multicast_release(window);
-            }
-        }
-        Err(err) => {
-            log::error!("Failed to lock running queriers: {err:?}");
-        }
-    }
-}
-
-/// Drops a failed instance browse and releases the native lock when
-/// nothing browses anymore.
-fn reconcile_querier_exit<R: Runtime>(
-    window: &Window<R>,
-    queriers: &Arc<Mutex<HashSet<String>>>,
-    meta_browsing: &Arc<AtomicBool>,
-    service_type: &str,
-) {
+/// Drops a failed instance browse, so its type stays retryable instead
+/// of lingering in the active set forever.
+fn reconcile_querier_exit(queriers: &Arc<Mutex<HashSet<String>>>, service_type: &str) {
     match queriers.lock() {
         Ok(mut queriers) => {
             queriers.remove(service_type);
-            if queriers.is_empty() && !meta_browsing.load(Ordering::SeqCst) {
-                multicast_release(window);
-            }
         }
         Err(err) => {
             log::error!("Failed to lock running queriers: {err:?}");
@@ -287,27 +223,12 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
     daemon
         .stop_browse(MDNS_SD_META_SERVICE)
         .map_err(|e| format!("Failed to stop browsing for {MDNS_SD_META_SERVICE}: {e:?}"))?;
-    state.meta_browsing.store(true, Ordering::SeqCst);
-    let generation = state.meta_gen.fetch_add(1, Ordering::SeqCst) + 1;
 
     let daemon = daemon.clone();
-    let queriers = state.queriers.clone();
-    let meta_browsing = state.meta_browsing.clone();
-    let meta_gen = state.meta_gen.clone();
-    {
-        let _guard = state
-            .queriers
-            .lock()
-            .map_err(|e| format!("Failed to lock running queriers: {e:?}"))?;
-        multicast_acquire(&window);
-    }
     tauri::async_runtime::spawn(async move {
         let receiver = match browse_with_retry(&daemon, MDNS_SD_META_SERVICE).await {
             Ok(receiver) => receiver,
-            Err(_) => {
-                reconcile_meta_exit(&window, &queriers, &meta_browsing, &meta_gen, generation);
-                return;
-            }
+            Err(_) => return,
         };
         while let Ok(event) = receiver.recv_async().await {
             match event {
@@ -340,7 +261,6 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
                 _ => {}
             }
         }
-        reconcile_meta_exit(&window, &queriers, &meta_browsing, &meta_gen, generation);
     });
     Ok(())
 }
@@ -348,14 +268,12 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
 /// Stops all running instance browses.
 ///
 /// Service-type discovery keeps running: it is the persistent watch that
-/// tells frontends which types to browse, and the Wi-Fi multicast lock
-/// stays held while it (or any instance browse) is active.
+/// tells frontends which types to browse.
 ///
 /// Entries whose daemon stop fails are kept and the failure is
-/// propagated, so the lock is never released while browsing may still
-/// be active. (`mdns-sd` only fails the stop itself on a full command
+/// propagated. (`mdns-sd` only fails the stop itself on a full command
 /// channel or a dead daemon, never for an unknown service type.)
-pub fn stop_browse<R: Runtime>(window: &Window<R>, state: &ManagedState) -> Result<(), String> {
+pub fn stop_browse(state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
         .lock()
@@ -377,9 +295,6 @@ pub fn stop_browse<R: Runtime>(window: &Window<R>, state: &ManagedState) -> Resu
     }
 
     queriers.clear();
-    if !state.meta_browsing.load(Ordering::SeqCst) {
-        multicast_release(window);
-    }
     Ok(())
 }
 
@@ -405,9 +320,6 @@ pub fn browse_many<R: Runtime>(
                     fresh.push(service_type);
                 }
             }
-            if !fresh.is_empty() {
-                multicast_acquire(&window);
-            }
             fresh
         }
         Err(err) => {
@@ -419,13 +331,12 @@ pub fn browse_many<R: Runtime>(
     for service_type in fresh {
         let daemon = daemon.clone();
         let queriers = state.queriers.clone();
-        let meta_browsing = state.meta_browsing.clone();
         let window = window.clone();
         tauri::async_runtime::spawn(async move {
             let receiver = match browse_with_retry(&daemon, &service_type).await {
                 Ok(receiver) => receiver,
                 Err(_) => {
-                    reconcile_querier_exit(&window, &queriers, &meta_browsing, &service_type);
+                    reconcile_querier_exit(&queriers, &service_type);
                     return;
                 }
             };
