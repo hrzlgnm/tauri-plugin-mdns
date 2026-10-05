@@ -42,10 +42,4 @@ impl<R: Runtime> Mdns<R> {
     pub fn local_network_granted(&self) -> Result<bool, String> {
         Ok(true)
     }
-
-    /// No Wi-Fi multicast lock exists on desktop; browsing needs no hook.
-    pub fn acquire_multicast_lock(&self) {}
-
-    /// No Wi-Fi multicast lock exists on desktop; stopping needs no hook.
-    pub fn release_multicast_lock(&self) {}
 }
