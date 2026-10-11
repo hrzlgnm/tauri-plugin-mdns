@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.3](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.2...tauri-plugin-mdns-v0.4.3) (2026-10-11)
+
+
+### Dependencies
+
+* update actions/setup-node digest to 949feb2 ([#56](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/56)) ([20586a7](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/20586a72406a4a1611a38e73bddae6975898bf5f))
+* update dependency rollup to v4.64.1 ([#61](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/61)) ([a6f8eb2](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a6f8eb2419d06e07f38411c8ed7de68f38d7a604))
+* update dependency rollup to v4.64.2 ([#62](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/62)) ([41c064f](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/41c064fe5151ffb53bc96cf85dd6323ddcb61fcb))
+* update dtolnay/rust-toolchain digest to 686976e ([#58](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/58)) ([e7b4222](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/e7b422211010111fa49236862e404199671a2ced))
+* update rust crate serde_json to v1.0.152 ([#63](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/63)) ([5b00a61](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/5b00a61b99e20e0a7f3cbd9eeba443e50d6901f4))
+* update rust crate tauri to v2.12.2 ([#59](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/59)) ([dabc528](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/dabc528ff2b9d1702127e95514fc4223e06cb13c))
+* update rust crate tauri to v2.12.3 ([#64](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/64)) ([cc3f30e](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/cc3f30eabb0cc2bd3d2cd4ff598608b79350b063))
+
+
+### Miscellaneous Chores
+
+* use ubuntu-slim for 4 jobs ([#60](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/60)) ([153c3b2](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/153c3b23a42dab69d8fa93c8f4d3b26a906b58db))
+
 ## [0.4.2](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.1...tauri-plugin-mdns-v0.4.2) (2026-10-05)
 
 
