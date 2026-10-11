@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.3...tauri-plugin-mdns-v0.4.4) (2026-10-11)
+
+
+### Dependencies
+
+* update rust crate serde_json to v1.0.153 ([#65](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/65)) ([ac3e910](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/ac3e9108fee1a4d1215ef36641e00193bdce2589))
+
 ## [0.4.3](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.2...tauri-plugin-mdns-v0.4.3) (2026-10-11)
 
 
