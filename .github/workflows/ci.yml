@@ -209,6 +209,32 @@ jobs:
       actions: write # needed for sccache's GitHub cache backend
     uses: ./.github/workflows/test-android.yml
 
+  lockfile-fresh:
+    name: "🔒 Lockfile Fresh"
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read # checkout only; the check never commits anything
+    steps:
+      - name: 🔄 Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+
+      - name: 🔒 Verify lockfile is fully maximized
+        shell: bash
+        run: |
+          cargo update --manifest-path Cargo.toml
+          if ! git diff --quiet -- Cargo.lock; then
+            echo "::error::Cargo.lock is not fully maximized. Run Renovate lock maintenance, let release-please refresh this PR, then re-run CI."
+            git diff --stat -- Cargo.lock
+            exit 1
+          fi
+          echo "Cargo.lock is fully maximized"
+
   all-required-green: # This job does nothing and is only used for the branch protection
     name: CI Status
     runs-on: ubuntu-slim
@@ -221,6 +247,7 @@ jobs:
       - android-apk
       - bindings
       - typos
+      - lockfile-fresh
     if: always()
     steps:
       - name: Check whether the needed jobs succeeded or failed
@@ -237,4 +264,5 @@ jobs:
             test,
             android,
             android-apk,
-            bindings
+            bindings,
+            lockfile-fresh
