@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.6](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.5...tauri-plugin-mdns-v0.4.6) (2026-10-24)
+
+
+### Dependencies
+
+* lock file maintenance ([#90](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/90)) ([5441300](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/5441300859e739a68143cc4f396580eb3c111735))
+* update dependency rollup to v4.64.10 ([#89](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/89)) ([4d043e2](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/4d043e2996913911647739dbb82e0f01624550f3))
+* update dependency rollup to v4.64.12 ([#96](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/96)) ([668a93a](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/668a93a1139faafe13047fa9fd7f08427cac2a1c))
+* update dependency rollup to v4.64.8 ([#86](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/86)) ([f563a96](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/f563a9619c03633b0250989a614ea554c9d3e4bd))
+* update dependency rollup to v4.64.9 ([#87](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/87)) ([2152691](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/2152691647739649738d84ce21e7eff77b93c6dd))
+* update dependency sccache to v0.19.0 ([#97](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/97)) ([93bd91d](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/93bd91d4e44026e264dcbfc9a03b095262c3c1f8))
+* update hrzlgnm/actions action to v2.14.12 ([#91](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/91)) ([802a1fb](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/802a1fb094f18f8c7f7ffaa3d0c3a3acd9f7f5e5))
+* update rust crate tauri to v2.12.5 ([#88](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/88)) ([1958109](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/19581090c5045b8917cd8b464d422c42107f0528))
+* update rust crate tokio to v1.54.0 ([#84](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/84)) ([33db1e6](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/33db1e6dce1a075fd533cf23ef8ad672e888a4a6))
+* update rust crate tokio to v1.54.1 ([#92](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/92)) ([a1f6b56](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a1f6b56e0d8ae1dff662fff79a5f9ac33a44e4cd))
+* update rust-lang/crates-io-auth-action action to v1.0.6 ([#93](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/93)) ([2696715](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/269671552d4ec7fafa7e6694dc44a39702a4f8fb))
+
+
+### Miscellaneous Chores
+
+* **ci:** only cancel in-progress runs off main ([#94](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/94)) ([f0a092b](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/f0a092b22ecbae6164b9dde5ed0d7e315e6a9236))
+* drop unused sccache renovate marker comment ([#98](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/98)) ([f7518cb](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/f7518cbd661c7f1931cc3d1743a5ac4d7123b1c0))
+* fix misleading re-run note in lockfile-fresh error ([#95](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/95)) ([2aa9dfa](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/2aa9dfa168a62bd01991b9f82b4fc499aa2a4c0a))
+* gate release PRs on a fully maximized Cargo.lock ([#85](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/85)) ([0978743](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/0978743c7a515bf907cb7ca7e82809fc099119ae))
+* remove release-guard in favor of failure handler ([#82](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/82)) ([fd62497](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/fd62497713578cb01d3043162d8eb856d807523a))
+
 ## [0.4.5](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.4...tauri-plugin-mdns-v0.4.5) (2026-10-19)
 
 
