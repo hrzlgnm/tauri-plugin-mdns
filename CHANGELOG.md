@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.7](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.6...tauri-plugin-mdns-v0.4.7) (2026-11-10)
+
+
+### Bug Fixes
+
+* canonicalize service types to lowercase for case-insensitive browse ([#119](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/119)) ([b8a07f4](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/b8a07f4f2df97d82c9660552307d26890504ef21))
+
+
+### Dependencies
+
+* lock file maintenance ([#117](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/117)) ([45095cf](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/45095cf67c9fd0c5c3ad37aae63244018e7fd3bb))
+* lock file maintenance ([#120](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/120)) ([946fc0e](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/946fc0e4f39902e3d881c49f86797621734c0dfd))
+* update dependency rollup to v4.67.2 ([#110](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/110)) ([cf940ea](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/cf940ead5fb4e8390663b992cfdc99afa05fad04))
+* update dependency rollup to v4.67.3 ([#113](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/113)) ([32a345f](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/32a345fd362fa5e098e3f3d3f00610c46a69da88))
+* update dependency rollup to v4.67.4 ([#115](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/115)) ([0398b07](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/0398b07d2ce72ea1da761792872ede06c8fb8c4a))
+* update dependency rollup to v4.67.5 ([#116](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/116)) ([82da442](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/82da442683162caca6d023a67c646fddb3275656))
+* update dependency rollup to v4.68.0 ([#118](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/118)) ([7915376](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/79153764fcd2bfd9c1347f40165f1c29108a7383))
+* update dependency tslib to v2.9.1 ([#111](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/111)) ([9fe8e32](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/9fe8e320ff259f9668f13a1ad917fa9294e0a38d))
+* update hrzlgnm/actions action to v2.14.13 ([#114](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/114)) ([b93e95b](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/b93e95b7277f9bd6e903dcfbb891a2e310d802ff))
+
 ## [0.4.6](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.5...tauri-plugin-mdns-v0.4.6) (2026-11-02)
 
 
