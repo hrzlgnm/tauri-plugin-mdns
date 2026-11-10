@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.8](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.7...tauri-plugin-mdns-v0.4.8) (2026-11-10)
+
+
+### Bug Fixes
+
+* browse wire and canonical keys for requested service types ([#121](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/121)) ([c83ab19](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/c83ab198869a70086a463bfe99fbfd23013b11ca))
+
 ## [0.4.7](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.6...tauri-plugin-mdns-v0.4.7) (2026-11-10)
 
 
