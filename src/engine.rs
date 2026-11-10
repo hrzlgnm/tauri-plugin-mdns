@@ -245,10 +245,12 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
                 ServiceEvent::ServiceFound(_service_type, full_name) => {
                     match check_service_type_fully_qualified(full_name.as_str()) {
                         Ok(MdnsLabelType::ServiceType) => {
-                            // Emit the lowercase canonical form: frontends
-                            // browse it back through `browse_many`, whose
-                            // daemon keys match exactly.
-                            let service_type = full_name.to_ascii_lowercase();
+                            // Emit the wire case: frontends browse it back
+                            // through `browse_many`, and the daemon matches
+                            // browse keys exactly, so lowercasing here would
+                            // hide canonically mixed-case advertisers (e.g.
+                            // nearby-send).
+                            let service_type = full_name;
                             emit_event(
                                 &window,
                                 "service-type-found",
@@ -378,22 +380,33 @@ pub fn browse_many<R: Runtime>(
 /// Normalizes requested service types to lowercase canonical form and
 /// returns the keys to start browsing, recording them in `queriers`.
 ///
-/// DNS labels are case-insensitive but the daemon matches browse keys
-/// exactly, so `_Http._tcp` must browse as `_http._tcp`. Invalid types
-/// are skipped with a warning, as before (the daemon would reject them
-/// and `reconcile_querier_exit` drops them).
+/// For each input two keys are browsed at most: the lowercase canonical
+/// form (so `_Http._tcp` finds lowercase advertisers) and the as-given
+/// wire form when it is itself fully qualified and different (so a
+/// canonically mixed-case advertiser like nearby-send is found when the
+/// frontend passes the discovered wire name back). The daemon matches
+/// browse keys exactly, so either key alone would miss one side.
+/// Invalid types are skipped with a warning, as before (the daemon
+/// would reject them and `reconcile_querier_exit` drops them).
 fn select_fresh_browses(service_types: Vec<String>, queriers: &mut HashSet<String>) -> Vec<String> {
     let mut fresh = Vec::new();
     for service_type in service_types {
-        let service_type = match normalize_service_type(&service_type) {
+        let trimmed = service_type.trim();
+        let normalized = match normalize_service_type(trimmed) {
             Ok(normalized) => normalized,
             Err(e) => {
                 log::warn!("Ignoring invalid service type `{service_type}`: {e}");
                 continue;
             }
         };
-        if queriers.insert(service_type.clone()) {
-            fresh.push(service_type);
+        if queriers.insert(normalized.clone()) {
+            fresh.push(normalized.clone());
+        }
+        if trimmed != normalized
+            && check_service_type_fully_qualified(trimmed).is_ok()
+            && queriers.insert(trimmed.to_string())
+        {
+            fresh.push(trimmed.to_string());
         }
     }
     fresh
@@ -750,7 +763,7 @@ mod browse_selection_tests {
     use std::collections::HashSet;
 
     #[test]
-    fn test_case_variants_start_single_browse() {
+    fn test_case_variants_browse_wire_and_canonical() {
         let mut queriers = HashSet::new();
         let fresh = select_fresh_browses(
             vec![
@@ -760,8 +773,34 @@ mod browse_selection_tests {
             ],
             &mut queriers,
         );
-        assert_eq!(fresh, vec!["_http._tcp.local.".to_string()]);
-        assert_eq!(queriers, HashSet::from(["_http._tcp.local.".to_string()]));
+        // Canonical keys first, then each distinct wire form.
+        assert_eq!(
+            fresh,
+            vec![
+                "_http._tcp.local.".to_string(),
+                "_Http._tcp.local.".to_string(),
+                "_HTTP._TCP.LOCAL.".to_string(),
+            ]
+        );
+        assert_eq!(queriers.len(), 3);
+    }
+
+    #[test]
+    fn test_mixed_case_advertiser_browses_wire_form() {
+        // nearby-send advertises uppercase canonically; only the exact
+        // wire key discovers it, while the canonical key covers the
+        // lowercase guess.
+        let mut queriers = HashSet::new();
+        let fresh =
+            select_fresh_browses(vec!["_FC9F5ED42C8A._tcp.local.".to_string()], &mut queriers);
+        assert_eq!(
+            fresh,
+            vec![
+                "_fc9f5ed42c8a._tcp.local.".to_string(),
+                "_FC9F5ED42C8A._tcp.local.".to_string(),
+            ]
+        );
+        assert_eq!(queriers.len(), 2);
     }
 
     #[test]
@@ -782,9 +821,10 @@ mod browse_selection_tests {
     #[test]
     fn test_already_browsed_types_are_skipped() {
         let mut queriers = HashSet::from(["_http._tcp.local.".to_string()]);
+        // Canonical key already active; only the new wire form starts.
         let fresh = select_fresh_browses(vec!["_HTTP._tcp.local.".to_string()], &mut queriers);
-        assert!(fresh.is_empty());
-        assert_eq!(queriers.len(), 1);
+        assert_eq!(fresh, vec!["_HTTP._tcp.local.".to_string()]);
+        assert_eq!(queriers.len(), 2);
     }
 
     #[test]
