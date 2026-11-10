@@ -227,6 +227,7 @@ pub enum MdnsLabelType {
     SubType,
 }
 
+/// Validates one DNS label of a service type (`_http`) or subtype (`_printer`).
 fn check_mdns_label(label: &str, is_subtype: bool) -> Result<MdnsLabelType, MdnsError> {
     let valid_dns_chars = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
     let error = if is_subtype {
@@ -272,6 +273,12 @@ fn check_mdns_label(label: &str, is_subtype: bool) -> Result<MdnsLabelType, Mdns
     }
 }
 
+/// Validates a fully qualified service type (`_http._tcp.local.`) or
+/// subtype (`_printer._sub._http._tcp.local.`).
+///
+/// Fixed tokens (`_tcp`/`_udp`, `_sub`, `local`) match without regard to
+/// ASCII case since DNS labels are case-insensitive; service and subtype
+/// labels keep wire case here and are lowercased by the caller.
 pub fn check_service_type_fully_qualified(service_type: &str) -> Result<MdnsLabelType, MdnsError> {
     // The service type must end with a trailing dot
     if !service_type.ends_with('.') {
@@ -337,6 +344,15 @@ pub fn normalize_service_type(service_type: &str) -> Result<String, MdnsError> {
     Ok(trimmed.to_ascii_lowercase())
 }
 
+/// Lowercases a wire service-type or subtype to its canonical form.
+///
+/// DNS labels are case-insensitive (RFC 6762/6763) but frontends group
+/// by these strings, so wire case would split results. Instance
+/// fullnames and hostnames are intentionally left untouched for display.
+pub fn canonicalize_wire_type(service_type: &str) -> String {
+    service_type.to_ascii_lowercase()
+}
+
 #[cfg(test)]
 mod local_network_state_tests {
     use super::LocalNetworkState;
@@ -382,7 +398,8 @@ mod local_network_state_tests {
 #[cfg(test)]
 mod service_type_tests {
     use super::{
-        check_service_type_fully_qualified, normalize_service_type, MdnsError, MdnsLabelType,
+        canonicalize_wire_type, check_service_type_fully_qualified, normalize_service_type,
+        MdnsError, MdnsLabelType,
     };
 
     #[test]
@@ -454,6 +471,22 @@ mod service_type_tests {
         assert_eq!(
             normalize_service_type("_http._tcp.example."),
             Err(MdnsError::InvalidDomain)
+        );
+    }
+
+    #[test]
+    fn test_canonicalize_wire_type_lowercases() {
+        assert_eq!(
+            canonicalize_wire_type("_Http._TCP.local."),
+            "_http._tcp.local."
+        );
+        assert_eq!(
+            canonicalize_wire_type("_Printer._SUB._HTTP._tcp.local."),
+            "_printer._sub._http._tcp.local."
+        );
+        assert_eq!(
+            canonicalize_wire_type("_http._tcp.local."),
+            "_http._tcp.local."
         );
     }
 
