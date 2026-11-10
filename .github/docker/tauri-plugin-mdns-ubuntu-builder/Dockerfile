@@ -15,4 +15,4 @@ RUN apt-get update \
 
 LABEL org.opencontainers.image.source="https://github.com/hrzlgnm/tauri-plugin-mdns"
 LABEL org.opencontainers.image.title="tauri-plugin-mdns Ubuntu Builder"
-LABEL org.opencontainers.image.base.name="ubuntu:22.04"
+LABEL org.opencontainers.image.base.name="ubuntu:26.04"
