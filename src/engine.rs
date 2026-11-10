@@ -146,6 +146,11 @@ fn convert_to_scoped_addr(host_ip: &mdns_sd::ScopedIp) -> ScopedAddr {
     }
 }
 
+/// Converts a daemon `ResolvedService` into the emitted wire shape.
+///
+/// Service types and subtypes use lowercase canonical form (see
+/// [`canonicalize_wire_type`]); instance fullnames and hostnames keep
+/// wire case for display.
 fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService {
     let addresses: Vec<ScopedAddr> = resolved
         .addresses
@@ -177,11 +182,16 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
     sorted_txt.sort_by(|a, b| a.key.cmp(&b.key));
     ResolvedService {
         instance_fullname: resolved.fullname.clone(),
-        service_type: resolved.ty_domain.clone(),
+        // Lowercase canonical form: frontends group by this string,
+        // so wire case would split results.
+        service_type: canonicalize_wire_type(&resolved.ty_domain),
         hostname: resolved.host.clone(),
         port: resolved.port,
         addresses: consolidated,
-        subtype: resolved.sub_ty_domain.clone(),
+        subtype: resolved
+            .sub_ty_domain
+            .as_ref()
+            .map(|s| canonicalize_wire_type(s)),
         txt: sorted_txt,
         updated_at_micros: timestamp_micros(),
         dead: false,
@@ -235,12 +245,14 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
                 ServiceEvent::ServiceFound(_service_type, full_name) => {
                     match check_service_type_fully_qualified(full_name.as_str()) {
                         Ok(MdnsLabelType::ServiceType) => {
+                            // Emit the lowercase canonical form: frontends
+                            // browse it back through `browse_many`, whose
+                            // daemon keys match exactly.
+                            let service_type = full_name.to_ascii_lowercase();
                             emit_event(
                                 &window,
                                 "service-type-found",
-                                &ServiceTypeFoundEvent {
-                                    service_type: full_name,
-                                },
+                                &ServiceTypeFoundEvent { service_type },
                             );
                         }
                         Ok(MdnsLabelType::SubType) => {
@@ -313,15 +325,7 @@ pub fn browse_many<R: Runtime>(
         }
     };
     let fresh: Vec<String> = match state.queriers.lock() {
-        Ok(mut queriers) => {
-            let mut fresh = Vec::new();
-            for service_type in service_types {
-                if queriers.insert(service_type.clone()) {
-                    fresh.push(service_type);
-                }
-            }
-            fresh
-        }
+        Ok(mut queriers) => select_fresh_browses(service_types, &mut queriers),
         Err(err) => {
             log::error!("Failed to lock running queriers: {err:?}");
             return;
@@ -369,6 +373,30 @@ pub fn browse_many<R: Runtime>(
             }
         });
     }
+}
+
+/// Normalizes requested service types to lowercase canonical form and
+/// returns the keys to start browsing, recording them in `queriers`.
+///
+/// DNS labels are case-insensitive but the daemon matches browse keys
+/// exactly, so `_Http._tcp` must browse as `_http._tcp`. Invalid types
+/// are skipped with a warning, as before (the daemon would reject them
+/// and `reconcile_querier_exit` drops them).
+fn select_fresh_browses(service_types: Vec<String>, queriers: &mut HashSet<String>) -> Vec<String> {
+    let mut fresh = Vec::new();
+    for service_type in service_types {
+        let service_type = match normalize_service_type(&service_type) {
+            Ok(normalized) => normalized,
+            Err(e) => {
+                log::warn!("Ignoring invalid service type `{service_type}`: {e}");
+                continue;
+            }
+        };
+        if queriers.insert(service_type.clone()) {
+            fresh.push(service_type);
+        }
+    }
+    fresh
 }
 
 /// Verifies that an instance is still present on the network.
@@ -714,6 +742,64 @@ pub fn set_interfaces(state: &ManagedState, enabled: Vec<String>) -> Result<(), 
     }
     *disabled_interfaces = new_disabled;
     Ok(())
+}
+
+#[cfg(test)]
+mod browse_selection_tests {
+    use super::select_fresh_browses;
+    use std::collections::HashSet;
+
+    #[test]
+    fn test_case_variants_start_single_browse() {
+        let mut queriers = HashSet::new();
+        let fresh = select_fresh_browses(
+            vec![
+                "_Http._tcp.local.".to_string(),
+                "_http._tcp.local.".to_string(),
+                "_HTTP._TCP.LOCAL.".to_string(),
+            ],
+            &mut queriers,
+        );
+        assert_eq!(fresh, vec!["_http._tcp.local.".to_string()]);
+        assert_eq!(queriers, HashSet::from(["_http._tcp.local.".to_string()]));
+    }
+
+    #[test]
+    fn test_invalid_types_leave_no_active_entry() {
+        let mut queriers = HashSet::new();
+        let fresh = select_fresh_browses(
+            vec![
+                "_http._ftp.local.".to_string(),
+                "not-a-type".to_string(),
+                String::new(),
+            ],
+            &mut queriers,
+        );
+        assert!(fresh.is_empty());
+        assert!(queriers.is_empty());
+    }
+
+    #[test]
+    fn test_already_browsed_types_are_skipped() {
+        let mut queriers = HashSet::from(["_http._tcp.local.".to_string()]);
+        let fresh = select_fresh_browses(vec!["_HTTP._tcp.local.".to_string()], &mut queriers);
+        assert!(fresh.is_empty());
+        assert_eq!(queriers.len(), 1);
+    }
+
+    #[test]
+    fn test_distinct_types_all_start() {
+        let mut queriers = HashSet::new();
+        let fresh = select_fresh_browses(
+            vec![
+                "_http._tcp.local.".to_string(),
+                "_ssh._tcp.local.".to_string(),
+            ],
+            &mut queriers,
+        );
+        assert_eq!(fresh.len(), 2);
+        assert_eq!(queriers.len(), 2);
+    }
 }
 
 #[cfg(test)]
