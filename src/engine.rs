@@ -177,11 +177,16 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
     sorted_txt.sort_by(|a, b| a.key.cmp(&b.key));
     ResolvedService {
         instance_fullname: resolved.fullname.clone(),
-        service_type: resolved.ty_domain.clone(),
+        // Lowercase canonical form: DNS labels are case-insensitive but
+        // frontends group by this string, so wire case would split results.
+        service_type: resolved.ty_domain.to_ascii_lowercase(),
         hostname: resolved.host.clone(),
         port: resolved.port,
         addresses: consolidated,
-        subtype: resolved.sub_ty_domain.clone(),
+        subtype: resolved
+            .sub_ty_domain
+            .as_ref()
+            .map(|s| s.to_ascii_lowercase()),
         txt: sorted_txt,
         updated_at_micros: timestamp_micros(),
         dead: false,
@@ -235,12 +240,14 @@ pub fn browse_types<R: Runtime>(window: Window<R>, state: &ManagedState) -> Resu
                 ServiceEvent::ServiceFound(_service_type, full_name) => {
                     match check_service_type_fully_qualified(full_name.as_str()) {
                         Ok(MdnsLabelType::ServiceType) => {
+                            // Emit the lowercase canonical form: frontends
+                            // browse it back through `browse_many`, whose
+                            // daemon keys match exactly.
+                            let service_type = full_name.to_ascii_lowercase();
                             emit_event(
                                 &window,
                                 "service-type-found",
-                                &ServiceTypeFoundEvent {
-                                    service_type: full_name,
-                                },
+                                &ServiceTypeFoundEvent { service_type },
                             );
                         }
                         Ok(MdnsLabelType::SubType) => {
@@ -316,6 +323,18 @@ pub fn browse_many<R: Runtime>(
         Ok(mut queriers) => {
             let mut fresh = Vec::new();
             for service_type in service_types {
+                // Canonicalize: DNS labels are case-insensitive but the
+                // daemon matches browse keys exactly, so `_Http._tcp`
+                // must browse as `_http._tcp`. Invalid types are
+                // skipped with a warning, as before (the daemon would
+                // reject them and `reconcile_querier_exit` drops them).
+                let service_type = match normalize_service_type(&service_type) {
+                    Ok(normalized) => normalized,
+                    Err(e) => {
+                        log::warn!("Ignoring invalid service type `{service_type}`: {e}");
+                        continue;
+                    }
+                };
                 if queriers.insert(service_type.clone()) {
                     fresh.push(service_type);
                 }

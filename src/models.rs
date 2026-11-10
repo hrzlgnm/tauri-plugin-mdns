@@ -294,13 +294,14 @@ pub fn check_service_type_fully_qualified(service_type: &str) -> Result<MdnsLabe
     let domain = parts.last().expect("To have a domain"); // Domain is always the last component
     let protocol = parts[parts.len() - 2]; // Protocol is the second-to-last component
 
-    // Validate protocol name (must be either _tcp or _udp)
-    if protocol != "_tcp" && protocol != "_udp" {
+    // Validate protocol name (must be either _tcp or _udp).
+    // Fixed tokens are DNS labels and therefore case-insensitive.
+    if !protocol.eq_ignore_ascii_case("_tcp") && !protocol.eq_ignore_ascii_case("_udp") {
         return Err(MdnsError::InvalidProtocol);
     }
 
-    // Validate domain (must be "local")
-    if *domain != "local" {
+    // Validate domain (must be "local").
+    if !domain.eq_ignore_ascii_case("local") {
         return Err(MdnsError::InvalidDomain);
     }
 
@@ -313,8 +314,8 @@ pub fn check_service_type_fully_qualified(service_type: &str) -> Result<MdnsLabe
         let sub_label = parts[1];
         let sub_type = parts[0];
 
-        // Ensure the second part is "_sub"
-        if sub_label != "_sub" {
+        // Ensure the second part is "_sub" (case-insensitive DNS label).
+        if !sub_label.eq_ignore_ascii_case("_sub") {
             return Err(MdnsError::InvalidSublabel);
         }
 
@@ -322,6 +323,18 @@ pub fn check_service_type_fully_qualified(service_type: &str) -> Result<MdnsLabe
     }
 
     Ok(MdnsLabelType::ServiceType)
+}
+
+/// Lowercase canonical form of a validated service type.
+///
+/// DNS labels are case-insensitive (RFC 6762/6763) but `mdns-sd`
+/// matches browse keys exactly, so browsing `_Http._tcp.local.`
+/// would miss the results for `_http._tcp.local.`. Canonicalize
+/// every service type before browsing, deduping, or emitting it.
+pub fn normalize_service_type(service_type: &str) -> Result<String, MdnsError> {
+    let trimmed = service_type.trim();
+    check_service_type_fully_qualified(trimmed)?;
+    Ok(trimmed.to_ascii_lowercase())
 }
 
 #[cfg(test)]
@@ -368,13 +381,79 @@ mod local_network_state_tests {
 
 #[cfg(test)]
 mod service_type_tests {
-    use super::{check_service_type_fully_qualified, MdnsError, MdnsLabelType};
+    use super::{
+        check_service_type_fully_qualified, normalize_service_type, MdnsError, MdnsLabelType,
+    };
 
     #[test]
     fn test_valid_service_type_is_accepted() {
         assert_eq!(
             check_service_type_fully_qualified("_http._tcp.local."),
             Ok(MdnsLabelType::ServiceType)
+        );
+    }
+
+    #[test]
+    fn test_mixed_case_service_type_is_accepted() {
+        assert_eq!(
+            check_service_type_fully_qualified("_Http._tcp.local."),
+            Ok(MdnsLabelType::ServiceType)
+        );
+        assert_eq!(
+            check_service_type_fully_qualified("_http._TCP.local."),
+            Ok(MdnsLabelType::ServiceType)
+        );
+        assert_eq!(
+            check_service_type_fully_qualified("_http._tcp.LOCAL."),
+            Ok(MdnsLabelType::ServiceType)
+        );
+        assert_eq!(
+            check_service_type_fully_qualified("_HTTP._TCP.LOCAL."),
+            Ok(MdnsLabelType::ServiceType)
+        );
+    }
+
+    #[test]
+    fn test_mixed_case_subtype_is_accepted() {
+        assert_eq!(
+            check_service_type_fully_qualified("_printer._SUB._http._tcp.local."),
+            Ok(MdnsLabelType::SubType)
+        );
+        assert_eq!(
+            check_service_type_fully_qualified("_PRINTER._sub._HTTP._TCP.LOCAL."),
+            Ok(MdnsLabelType::SubType)
+        );
+    }
+
+    #[test]
+    fn test_normalize_service_type_lowercases() {
+        assert_eq!(
+            normalize_service_type("_Http._tcp.local."),
+            Ok("_http._tcp.local.".to_string())
+        );
+        assert_eq!(
+            normalize_service_type("  _HTTP._TCP.LOCAL.  "),
+            Ok("_http._tcp.local.".to_string())
+        );
+        assert_eq!(
+            normalize_service_type("_PRINTER._SUB._HTTP._tcp.local."),
+            Ok("_printer._sub._http._tcp.local.".to_string())
+        );
+    }
+
+    #[test]
+    fn test_normalize_service_type_rejects_invalid() {
+        assert_eq!(
+            normalize_service_type("_http._tcp.local"),
+            Err(MdnsError::MissingTrailingDot)
+        );
+        assert_eq!(
+            normalize_service_type("_http._ftp.local."),
+            Err(MdnsError::InvalidProtocol)
+        );
+        assert_eq!(
+            normalize_service_type("_http._tcp.example."),
+            Err(MdnsError::InvalidDomain)
         );
     }
 
