@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.8...tauri-plugin-mdns-v0.5.0) (2026-11-14)
+
+
+### Features
+
+* add ubuntu builder image ([#123](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/123)) ([85e1a35](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/85e1a353b97fe3bcf0825ccc4e934c3c166d3fef))
+
+
+### Bug Fixes
+
+* drop base.name label from builder image ([#126](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/126)) ([01e3f94](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/01e3f94811348b1195c30f1022aac7cd001245af))
+
+
+### Dependencies
+
+* update actions/setup-java digest to d1374f8 ([#131](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/131)) ([dd9071a](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/dd9071aae9155a6765529c354b8b8fce4592ea04))
+* update dependency rollup to v4.68.1 ([#129](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/129)) ([3fe4d22](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/3fe4d220c1639507290e7ddaa5cf4b7c2786a526))
+* update dependency rollup to v4.68.2 ([#130](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/130)) ([2ac1156](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/2ac115627a7e98b4b33a64198577b053abba81c0))
+* update ubuntu docker tag to v26 ([#125](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/125)) ([9f516da](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/9f516da299efa4ff798a7ddd75e2df5050e552ac))
+* update ubuntu:26.04 docker digest to 065aa86 ([#128](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/128)) ([a68a630](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a68a6308e75f8901d0859f8a9571afcb5a775baa))
+
 ## [0.4.8](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.7...tauri-plugin-mdns-v0.4.8) (2026-11-10)
 
 
