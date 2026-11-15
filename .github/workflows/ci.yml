@@ -89,7 +89,7 @@ jobs:
           persist-credentials: false
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: rustfmt
 
@@ -110,7 +110,7 @@ jobs:
           persist-credentials: false
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: clippy
 
@@ -135,7 +135,7 @@ jobs:
           persist-credentials: false
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: clippy
 
@@ -192,7 +192,7 @@ jobs:
           persist-credentials: false
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: clippy
           targets: aarch64-linux-android
@@ -247,7 +247,7 @@ jobs:
           persist-credentials: false
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
 
       - name: 🔒 Verify lockfile is fully maximized
         shell: bash
