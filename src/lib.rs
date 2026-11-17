@@ -17,12 +17,11 @@
 //! On Android the engine additionally handles the `ACCESS_LOCAL_NETWORK`
 //! runtime permission, which Android 17 mandates for apps targeting SDK
 //! 37+: without it local-network access — including mDNS — is blocked by
-//! default, so [`commands::browse_types`] and [`commands::browse_many`]
-//! refuse to start while access is not granted. Frontends drive the
-//! consent flow through [`commands::local_network_status`] and
-//! [`commands::request_local_network_access`]; the declaration travels in
-//! the plugin manifest and is merged into the host app, surviving
-//! `tauri android init`.
+//! default, so the `browse_types` and `browse_many` commands refuse to
+//! start while access is not granted. Frontends drive the consent flow
+//! through the `local_network_status` and `request_local_network_access`
+//! commands; the declaration travels in the plugin manifest and is
+//! merged into the host app, surviving `tauri android init`.
 //!
 //! [`mdns-sd`]: https://docs.rs/mdns-sd
 
