@@ -5,8 +5,9 @@ This permission set enables mDNS service discovery (browse).
 ### Granted Permissions
 
 Browsing for service types and instances, managing the browsed
-interfaces and protocol flags, reading daemon metrics, verifying
-instances, and checking/requesting local-network access on Android.
+interfaces and protocol flags, reading daemon metrics and status,
+verifying instances, and checking/requesting local-network access on
+Android.
 
 #### This default permission set includes the following:
 
@@ -18,6 +19,7 @@ instances, and checking/requesting local-network access on Android.
 - `allow-set-interfaces`
 - `allow-set-protocol-flags`
 - `allow-stop-browse`
+- `allow-subscribe-daemon-status`
 - `allow-subscribe-interfaces`
 - `allow-subscribe-metrics`
 - `allow-verify`
@@ -235,6 +237,32 @@ Enables the stop_browse command without any pre-configured scope.
 <td>
 
 Denies the stop_browse command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mdns:allow-subscribe-daemon-status`
+
+</td>
+<td>
+
+Enables the subscribe_daemon_status command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mdns:deny-subscribe-daemon-status`
+
+</td>
+<td>
+
+Denies the subscribe_daemon_status command without any pre-configured scope.
 
 </td>
 </tr>

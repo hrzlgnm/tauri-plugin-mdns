@@ -391,6 +391,18 @@
           "markdownDescription": "Denies the stop_browse command without any pre-configured scope."
         },
         {
+          "description": "Enables the subscribe_daemon_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-subscribe-daemon-status",
+          "markdownDescription": "Enables the subscribe_daemon_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the subscribe_daemon_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-subscribe-daemon-status",
+          "markdownDescription": "Denies the subscribe_daemon_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the subscribe_interfaces command without any pre-configured scope.",
           "type": "string",
           "const": "allow-subscribe-interfaces",
@@ -427,10 +439,10 @@
           "markdownDescription": "Denies the verify command without any pre-configured scope."
         },
         {
-          "description": "This permission set enables mDNS service discovery (browse).\n\n### Granted Permissions\n\nBrowsing for service types and instances, managing the browsed\ninterfaces and protocol flags, reading daemon metrics, verifying\ninstances, and checking/requesting local-network access on Android.\n\n#### This default permission set includes:\n\n- `allow-browse-many`\n- `allow-browse-types`\n- `allow-get-protocol-flags`\n- `allow-local-network-status`\n- `allow-request-local-network-access`\n- `allow-set-interfaces`\n- `allow-set-protocol-flags`\n- `allow-stop-browse`\n- `allow-subscribe-interfaces`\n- `allow-subscribe-metrics`\n- `allow-verify`",
+          "description": "This permission set enables mDNS service discovery (browse).\n\n### Granted Permissions\n\nBrowsing for service types and instances, managing the browsed\ninterfaces and protocol flags, reading daemon metrics and status,\nverifying instances, and checking/requesting local-network access on\nAndroid.\n\n#### This default permission set includes:\n\n- `allow-browse-many`\n- `allow-browse-types`\n- `allow-get-protocol-flags`\n- `allow-local-network-status`\n- `allow-request-local-network-access`\n- `allow-set-interfaces`\n- `allow-set-protocol-flags`\n- `allow-stop-browse`\n- `allow-subscribe-daemon-status`\n- `allow-subscribe-interfaces`\n- `allow-subscribe-metrics`\n- `allow-verify`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "This permission set enables mDNS service discovery (browse).\n\n### Granted Permissions\n\nBrowsing for service types and instances, managing the browsed\ninterfaces and protocol flags, reading daemon metrics, verifying\ninstances, and checking/requesting local-network access on Android.\n\n#### This default permission set includes:\n\n- `allow-browse-many`\n- `allow-browse-types`\n- `allow-get-protocol-flags`\n- `allow-local-network-status`\n- `allow-request-local-network-access`\n- `allow-set-interfaces`\n- `allow-set-protocol-flags`\n- `allow-stop-browse`\n- `allow-subscribe-interfaces`\n- `allow-subscribe-metrics`\n- `allow-verify`"
+          "markdownDescription": "This permission set enables mDNS service discovery (browse).\n\n### Granted Permissions\n\nBrowsing for service types and instances, managing the browsed\ninterfaces and protocol flags, reading daemon metrics and status,\nverifying instances, and checking/requesting local-network access on\nAndroid.\n\n#### This default permission set includes:\n\n- `allow-browse-many`\n- `allow-browse-types`\n- `allow-get-protocol-flags`\n- `allow-local-network-status`\n- `allow-request-local-network-access`\n- `allow-set-interfaces`\n- `allow-set-protocol-flags`\n- `allow-stop-browse`\n- `allow-subscribe-daemon-status`\n- `allow-subscribe-interfaces`\n- `allow-subscribe-metrics`\n- `allow-verify`"
         }
       ]
     }

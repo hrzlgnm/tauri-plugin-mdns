@@ -96,6 +96,50 @@ export interface MetricsChangedEvent {
     metrics: Record<string, number>;
 }
 
+/** The state of the daemon's multicast socket of one IP version. */
+export interface SocketState {
+    bound: boolean;
+    bind_error: string | null;
+}
+
+/** The multicast group membership of one IP version on an interface. */
+export interface Membership {
+    /** Sorted by numeric value. */
+    addresses: Array<string>;
+    joined: boolean;
+    /** The error from the last failed join; the daemon retries at its next IP check. */
+    join_error: string | null;
+}
+
+/** A network interface enabled in the daemon. */
+export interface EnabledInterface {
+    name: string;
+    index: number;
+    /** `null` when the daemon has no IPv4 address on the interface. */
+    ipv4: Membership | null;
+    /** `null` when the daemon has no IPv6 address on the interface. */
+    ipv6: Membership | null;
+}
+
+/**
+ * The mDNS daemon's status: `running` with its local setup, or
+ * `shutdown` once discovery is no longer possible.
+ */
+export type DaemonStatus =
+    | {
+          status: 'running';
+          ipv4_socket: SocketState;
+          ipv6_socket: SocketState;
+          /** Ordered by interface index. */
+          enabled_interfaces: Array<EnabledInterface>;
+      }
+    | { status: 'shutdown' };
+
+/** Payload of the `daemon-status-changed` event. */
+export interface DaemonStatusChangedEvent {
+    status: DaemonStatus;
+}
+
 /**
  * Native `localNetwork` permission state, as reported by
  * {@link localNetworkStatus} and {@link requestLocalNetworkAccess}.
@@ -151,6 +195,16 @@ export async function subscribeInterfaces(): Promise<void> {
 /** Starts the periodic `metrics-changed` emission (first call wins). */
 export async function subscribeMetrics(): Promise<void> {
     return invoke('plugin:mdns|subscribe_metrics');
+}
+
+/**
+ * Starts the periodic `daemon-status-changed` emission, sent whenever the
+ * daemon's status changes. Later calls (e.g. after a frontend reload)
+ * re-emit the current status, and reject if it cannot be read. A status
+ * the plugin does not know yet is not emitted.
+ */
+export async function subscribeDaemonStatus(): Promise<void> {
+    return invoke('plugin:mdns|subscribe_daemon_status');
 }
 
 /** Reports the enabled IP protocol families. */
@@ -218,4 +272,11 @@ export function onMetricsChanged(
     cb: (payload: MetricsChangedEvent) => void
 ): Promise<UnlistenFn> {
     return listen<MetricsChangedEvent>('metrics-changed', (event) => cb(event.payload));
+}
+
+/** Listens for daemon status changes (after {@link subscribeDaemonStatus}). */
+export function onDaemonStatusChanged(
+    cb: (payload: DaemonStatusChangedEvent) => void
+): Promise<UnlistenFn> {
+    return listen<DaemonStatusChangedEvent>('daemon-status-changed', (event) => cb(event.payload));
 }

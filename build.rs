@@ -10,6 +10,7 @@ const COMMANDS: &[&str] = &[
     "set_interfaces",
     "set_protocol_flags",
     "stop_browse",
+    "subscribe_daemon_status",
     "subscribe_interfaces",
     "subscribe_metrics",
     "verify",
