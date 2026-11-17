@@ -11,7 +11,8 @@
 //! grant the plugin's `default` permission in the app's capabilities so
 //! the frontend can invoke them. Discovery events (`service-type-found`,
 //! `service-resolved`, `service-removed`, `interfaces-changed`,
-//! `metrics-changed`, `daemon-status-changed`) are emitted to the calling window.
+//! `metrics-changed`, `daemon-status-changed`) are emitted to the
+//! calling window.
 //!
 //! On Android the engine additionally handles the `ACCESS_LOCAL_NETWORK`
 //! runtime permission, which Android 17 mandates for apps targeting SDK

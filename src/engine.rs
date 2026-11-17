@@ -30,6 +30,8 @@ const MDNS_SD_IP_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from
 const METRICS_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 const INTERFACES_LIST_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 const DAEMON_STATUS_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+const DAEMON_STATUS_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(20);
+const DAEMON_STATUS_RETRY_ATTEMPTS: usize = 100;
 const VERIFY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 async fn browse_with_retry(
@@ -473,26 +475,6 @@ fn enumerate_mdns_incapable_interfaces() -> Vec<IfKind> {
         .collect()
 }
 
-#[cfg(not(windows))]
-pub fn enumerate_mdns_capable_interfaces() -> Vec<NetworkInterface> {
-    let mut interfaces: Vec<NetworkInterface> = datalink::interfaces()
-        .iter()
-        .filter(|interface| {
-            // The loopback interface is offered as a selection even though it is not multicast
-            // capable, as it allows browsing mDNS services that are only advertised on loopback.
-            is_mdns_capable_pnet(interface)
-                || (interface.is_loopback() && !interface.ips.is_empty())
-        })
-        .map(|interface| NetworkInterface {
-            name: interface.name.clone(),
-            addresses: interface.ips.iter().map(|ip| ip.ip().to_string()).collect(),
-            enabled: true,
-        })
-        .collect();
-    interfaces.sort_by(|a, b| a.name.cmp(&b.name));
-    interfaces
-}
-
 #[cfg(windows)]
 fn enumerate_mdns_incapable_interfaces() -> Vec<IfKind> {
     if let Ok(adapters) = ipconfig::get_adapters() {
@@ -523,6 +505,26 @@ fn enumerate_mdns_incapable_interfaces() -> Vec<IfKind> {
     } else {
         vec![]
     }
+}
+
+#[cfg(not(windows))]
+pub fn enumerate_mdns_capable_interfaces() -> Vec<NetworkInterface> {
+    let mut interfaces: Vec<NetworkInterface> = datalink::interfaces()
+        .iter()
+        .filter(|interface| {
+            // The loopback interface is offered as a selection even though it is not multicast
+            // capable, as it allows browsing mDNS services that are only advertised on loopback.
+            is_mdns_capable_pnet(interface)
+                || (interface.is_loopback() && !interface.ips.is_empty())
+        })
+        .map(|interface| NetworkInterface {
+            name: interface.name.clone(),
+            addresses: interface.ips.iter().map(|ip| ip.ip().to_string()).collect(),
+            enabled: true,
+        })
+        .collect();
+    interfaces.sort_by(|a, b| a.name.cmp(&b.name));
+    interfaces
 }
 
 #[cfg(windows)]
@@ -694,7 +696,7 @@ fn from_daemon_status(status: &mdns_sd::DaemonStatus) -> Option<DaemonStatus> {
         })),
         mdns_sd::DaemonStatus::Shutdown => Some(DaemonStatus::Shutdown),
         other => {
-            log::warn!("Ignoring unknown daemon status: {other:?}");
+            log::debug!("Ignoring unknown daemon status: {other:?}");
             None
         }
     }
@@ -718,11 +720,16 @@ async fn query_daemon_status(daemon: &ServiceDaemon) -> Result<Option<DaemonStat
 
 /// Polls the daemon's status, emitting `daemon-status-changed` on every
 /// change, until the daemon shuts down.
+///
+/// Failures are logged only when they differ from the previous one, as
+/// a lasting condition would otherwise log every interval.
 async fn poll_daemon_status<R: Runtime>(window: Window<R>, daemon: ServiceDaemon) {
     let mut current: Option<DaemonStatus> = None;
+    let mut last_error: Option<String> = None;
     loop {
         match query_daemon_status(&daemon).await {
             Ok(Some(status)) => {
+                last_error = None;
                 let is_shutdown = status == DaemonStatus::Shutdown;
                 if current.as_ref() != Some(&status) {
                     emit_event(
@@ -739,7 +746,12 @@ async fn poll_daemon_status<R: Runtime>(window: Window<R>, daemon: ServiceDaemon
                 }
             }
             Ok(None) => {}
-            Err(e) => log::warn!("{e}"),
+            Err(e) => {
+                if last_error.as_ref() != Some(&e) {
+                    log::warn!("{e}");
+                }
+                last_error = Some(e);
+            }
         }
         tokio::time::sleep(DAEMON_STATUS_CHECK_INTERVAL).await;
     }
@@ -764,14 +776,18 @@ pub async fn subscribe_daemon_status<R: Runtime>(
         tauri::async_runtime::spawn(poll_daemon_status(window, daemon));
         return Ok(());
     }
-    if let Some(status) = query_daemon_status(&daemon).await? {
-        emit_event(
-            &window,
-            "daemon-status-changed",
-            &DaemonStatusChangedEvent { status },
-        );
+    for _ in 0..DAEMON_STATUS_RETRY_ATTEMPTS {
+        if let Some(status) = query_daemon_status(&daemon).await? {
+            emit_event(
+                &window,
+                "daemon-status-changed",
+                &DaemonStatusChangedEvent { status },
+            );
+            return Ok(());
+        }
+        tokio::time::sleep(DAEMON_STATUS_RETRY_DELAY).await;
     }
-    Ok(())
+    Err("Failed to query daemon status: command queue stayed full".to_string())
 }
 
 pub fn get_protocol_flags(state: &ManagedState) -> ProtocolFlags {
@@ -1172,7 +1188,7 @@ mod fullname_tests {
 
 #[cfg(test)]
 mod daemon_status_tests {
-    use super::from_daemon_status;
+    use super::{from_daemon_status, query_daemon_status};
     use crate::models::DaemonStatus;
     use mdns_sd::ServiceDaemon;
 
@@ -1212,5 +1228,18 @@ mod daemon_status_tests {
             .expect("shutdown reply");
 
         assert_eq!(from_daemon_status(&status), Some(DaemonStatus::Shutdown));
+    }
+
+    #[test]
+    fn test_status_query_after_shutdown_reports_shutdown() {
+        let daemon = ServiceDaemon::new().expect("daemon starts");
+        daemon
+            .shutdown()
+            .expect("shutdown request")
+            .recv()
+            .expect("shutdown reply");
+
+        let status = tauri::async_runtime::block_on(query_daemon_status(&daemon));
+        assert_eq!(status, Ok(Some(DaemonStatus::Shutdown)));
     }
 }

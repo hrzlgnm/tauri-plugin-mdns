@@ -5,8 +5,9 @@ This permission set enables mDNS service discovery (browse).
 ### Granted Permissions
 
 Browsing for service types and instances, managing the browsed
-interfaces and protocol flags, reading daemon metrics and status, verifying
-instances, and checking/requesting local-network access on Android.
+interfaces and protocol flags, reading daemon metrics and status,
+verifying instances, and checking/requesting local-network access on
+Android.
 
 #### This default permission set includes the following:
 
