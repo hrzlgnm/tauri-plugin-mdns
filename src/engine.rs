@@ -702,19 +702,34 @@ fn from_daemon_status(status: &mdns_sd::DaemonStatus) -> Option<DaemonStatus> {
     }
 }
 
+/// The outcome of asking the daemon for its status.
+#[derive(Debug, PartialEq)]
+enum StatusQuery {
+    Known(DaemonStatus),
+    /// A status variant this plugin does not know yet; nothing to emit.
+    Unknown,
+    /// The daemon's command queue was full; asking again may succeed.
+    Busy,
+}
+
+/// Formats a failed status query for logs and command errors.
+fn status_query_error(e: &Error) -> String {
+    format!("Failed to query daemon status: {e:?}")
+}
+
 /// Requests the daemon's current status.
-///
-/// Returns `Ok(None)` when the status could not be read this time
-/// (a full command queue, or an unknown status) and may be retried.
-async fn query_daemon_status(daemon: &ServiceDaemon) -> Result<Option<DaemonStatus>, String> {
+async fn query_daemon_status(daemon: &ServiceDaemon) -> Result<StatusQuery, String> {
+    let known = |status| Ok(StatusQuery::Known(status));
     match daemon.status() {
         Ok(receiver) => match receiver.recv_async().await {
-            Ok(status) => Ok(from_daemon_status(&status)),
-            Err(_) => Ok(Some(DaemonStatus::Shutdown)),
+            Ok(status) => {
+                Ok(from_daemon_status(&status).map_or(StatusQuery::Unknown, StatusQuery::Known))
+            }
+            Err(_) => known(DaemonStatus::Shutdown),
         },
-        Err(Error::Again) => Ok(None),
-        Err(Error::DaemonShutdown) => Ok(Some(DaemonStatus::Shutdown)),
-        Err(e) => Err(format!("Failed to query daemon status: {e:?}")),
+        Err(Error::Again) => Ok(StatusQuery::Busy),
+        Err(Error::DaemonShutdown) => known(DaemonStatus::Shutdown),
+        Err(e) => Err(status_query_error(&e)),
     }
 }
 
@@ -728,7 +743,7 @@ async fn poll_daemon_status<R: Runtime>(window: Window<R>, daemon: ServiceDaemon
     let mut last_error: Option<String> = None;
     loop {
         match query_daemon_status(&daemon).await {
-            Ok(Some(status)) => {
+            Ok(StatusQuery::Known(status)) => {
                 last_error = None;
                 let is_shutdown = status == DaemonStatus::Shutdown;
                 if current.as_ref() != Some(&status) {
@@ -745,7 +760,7 @@ async fn poll_daemon_status<R: Runtime>(window: Window<R>, daemon: ServiceDaemon
                     break;
                 }
             }
-            Ok(None) => {}
+            Ok(StatusQuery::Unknown | StatusQuery::Busy) => {}
             Err(e) => {
                 if last_error.as_ref() != Some(&e) {
                     log::warn!("{e}");
@@ -777,17 +792,20 @@ pub async fn subscribe_daemon_status<R: Runtime>(
         return Ok(());
     }
     for _ in 0..DAEMON_STATUS_RETRY_ATTEMPTS {
-        if let Some(status) = query_daemon_status(&daemon).await? {
-            emit_event(
-                &window,
-                "daemon-status-changed",
-                &DaemonStatusChangedEvent { status },
-            );
-            return Ok(());
+        match query_daemon_status(&daemon).await? {
+            StatusQuery::Known(status) => {
+                emit_event(
+                    &window,
+                    "daemon-status-changed",
+                    &DaemonStatusChangedEvent { status },
+                );
+                return Ok(());
+            }
+            StatusQuery::Unknown => return Ok(()),
+            StatusQuery::Busy => tokio::time::sleep(DAEMON_STATUS_RETRY_DELAY).await,
         }
-        tokio::time::sleep(DAEMON_STATUS_RETRY_DELAY).await;
     }
-    Err("Failed to query daemon status: command queue stayed full".to_string())
+    Err(status_query_error(&Error::Again))
 }
 
 pub fn get_protocol_flags(state: &ManagedState) -> ProtocolFlags {
@@ -1188,7 +1206,7 @@ mod fullname_tests {
 
 #[cfg(test)]
 mod daemon_status_tests {
-    use super::{from_daemon_status, query_daemon_status};
+    use super::{from_daemon_status, query_daemon_status, StatusQuery};
     use crate::models::DaemonStatus;
     use mdns_sd::ServiceDaemon;
 
@@ -1240,6 +1258,6 @@ mod daemon_status_tests {
             .expect("shutdown reply");
 
         let status = tauri::async_runtime::block_on(query_daemon_status(&daemon));
-        assert_eq!(status, Ok(Some(DaemonStatus::Shutdown)));
+        assert_eq!(status, Ok(StatusQuery::Known(DaemonStatus::Shutdown)));
     }
 }
