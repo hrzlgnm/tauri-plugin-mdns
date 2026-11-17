@@ -73,6 +73,8 @@ impl Display for ScopedAddr {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedService {
+    /// Readable instance fullname: the unescaped instance name, a `.`,
+    /// and the service type. The form `verify` expects.
     pub instance_fullname: String,
     pub service_type: String,
     pub hostname: String,
@@ -117,6 +119,8 @@ pub struct ServiceTypeFoundEvent {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ServiceRemovedEvent {
+    /// The removed instance's readable fullname, in the same form as
+    /// [`ResolvedService::instance_fullname`], not the bare instance name.
     pub instance_name: String,
     #[serde(with = "serde_with::As::<serde_with::DisplayFromStr>")]
     pub at_micros: u64,

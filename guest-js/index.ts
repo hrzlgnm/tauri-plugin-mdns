@@ -31,6 +31,13 @@ export interface ScopedAddr {
 
 /** A fully resolved service instance. */
 export interface ResolvedService {
+    /**
+     * Readable instance fullname: the instance name without DNS escapes,
+     * a `.`, and the service type (e.g. `L.A.R.A Hub._lara._tcp.local.`).
+     * Matches `instance_name` of `service-removed` for the same instance
+     * and is the form {@link verifyInstance} expects. The instance name
+     * may itself contain dots, so don't split it at the first one.
+     */
     instance_fullname: string;
     service_type: string;
     hostname: string;
@@ -68,6 +75,10 @@ export interface ServiceResolvedEvent {
 
 /** Payload of the `service-removed` event. */
 export interface ServiceRemovedEvent {
+    /**
+     * The removed instance's readable fullname, in the same form as
+     * {@link ResolvedService.instance_fullname}, not the bare instance name.
+     */
     instance_name: string;
     /** Microseconds since the Unix epoch, as a string. */
     at_micros: string;
@@ -119,7 +130,13 @@ export async function stopBrowse(): Promise<void> {
     return invoke('plugin:mdns|stop_browse');
 }
 
-/** Verifies that an instance is still present on the network. */
+/**
+ * Verifies that an instance is still present on the network.
+ *
+ * Pass {@link ResolvedService.instance_fullname} as received; the plugin
+ * escapes it for the daemon. An already escaped name (`L\.A...`) would be
+ * escaped twice and match nothing.
+ */
 export async function verifyInstance(instanceFullname: string): Promise<void> {
     return invoke('plugin:mdns|verify', { instanceFullname });
 }
