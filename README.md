@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/tauri-plugin-mdns)](https://crates.io/crates/tauri-plugin-mdns)
 [![npm](https://img.shields.io/npm/v/tauri-plugin-mdns-api)](https://www.npmjs.com/package/tauri-plugin-mdns-api)
-[![License: MIT-0](https://img.shields.io/badge/License-MIT--0-blue.svg)](https://opensource.org/license/mit-0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 mDNS service discovery (browse only) for Tauri apps on desktop and
 Android, built on [`mdns-sd`](https://docs.rs/mdns-sd). It finds service
@@ -97,4 +97,4 @@ await browseTypes();
 
 ## License
 
-MIT-0
+[MIT](LICENSE)
