@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-subscribe-daemon-status"
+description = "Enables the subscribe_daemon_status command without any pre-configured scope."
+commands.allow = ["subscribe_daemon_status"]
+
+[[permission]]
+identifier = "deny-subscribe-daemon-status"
+description = "Denies the subscribe_daemon_status command without any pre-configured scope."
+commands.deny = ["subscribe_daemon_status"]

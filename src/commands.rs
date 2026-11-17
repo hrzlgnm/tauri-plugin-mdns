@@ -84,6 +84,16 @@ pub fn subscribe_metrics<R: Runtime>(window: Window<R>, state: State<'_, Managed
     engine::subscribe_metrics(window, &state);
 }
 
+/// Starts the periodic `daemon-status-changed` emission; later calls
+/// re-emit the current status.
+#[tauri::command]
+pub async fn subscribe_daemon_status<R: Runtime>(
+    window: Window<R>,
+    state: State<'_, ManagedState>,
+) -> Result<(), String> {
+    engine::subscribe_daemon_status(window, &state).await
+}
+
 /// Reports the enabled IP protocol families.
 #[tauri::command]
 pub fn get_protocol_flags(state: State<'_, ManagedState>) -> ProtocolFlags {

@@ -8,7 +8,7 @@ mDNS service discovery (browse) for Tauri apps on desktop and Android,
 backed by the [`mdns-sd`](https://docs.rs/mdns-sd) crate in Rust on
 every supported platform: service-type enumeration, instance browsing
 with resolution and removal events, interface selection with protocol
-flags, daemon metrics, and instance verification.
+flags, daemon metrics and status, and instance verification.
 
 Mobile support is Android-only: iOS is not supported and there are no
 plans to port the plugin to it (iOS builds fail with an explicit
@@ -52,10 +52,11 @@ tauri::Builder::default()
 The plugin registers its commands under the `plugin:mdns|` namespace:
 `browse_types`, `browse_many`, `stop_browse`, `verify`,
 `subscribe_interfaces`, `set_interfaces`, `get_protocol_flags`,
-`set_protocol_flags`, `subscribe_metrics`, `local_network_status`,
-and `request_local_network_access`. Discovery results arrive as window
-events: `service-type-found`, `service-resolved`, `service-removed`,
-`interfaces-changed`, and `metrics-changed`.
+`set_protocol_flags`, `subscribe_metrics`, `subscribe_daemon_status`,
+`local_network_status`, and `request_local_network_access`. Discovery
+results arrive as window events: `service-type-found`,
+`service-resolved`, `service-removed`, `interfaces-changed`,
+`metrics-changed`, and `daemon-status-changed`.
 
 ## JavaScript API
 

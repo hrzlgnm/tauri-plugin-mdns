@@ -29,6 +29,7 @@ const MDNS_SD_META_SERVICE: &str = "_services._dns-sd._udp.local.";
 const MDNS_SD_IP_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 const METRICS_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 const INTERFACES_LIST_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+const DAEMON_STATUS_CHECK_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 const VERIFY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 async fn browse_with_retry(
@@ -62,6 +63,7 @@ pub struct ManagedState {
     queriers: Arc<Mutex<HashSet<String>>>,
     metrics_subscribed: AtomicBool,
     interfaces_subscribed: AtomicBool,
+    daemon_status_subscribed: AtomicBool,
     ipv4_enabled: AtomicBool,
     ipv6_enabled: AtomicBool,
     disabled_interfaces: Arc<Mutex<HashSet<String>>>,
@@ -74,6 +76,7 @@ impl ManagedState {
             queriers: Arc::new(Mutex::new(HashSet::new())),
             metrics_subscribed: AtomicBool::new(false),
             interfaces_subscribed: AtomicBool::new(false),
+            daemon_status_subscribed: AtomicBool::new(false),
             ipv4_enabled: AtomicBool::new(true),
             ipv6_enabled: AtomicBool::new(true),
             disabled_interfaces: Arc::new(Mutex::new(HashSet::new())),
@@ -656,6 +659,121 @@ pub fn subscribe_metrics<R: Runtime>(window: Window<R>, state: &ManagedState) {
     }
 }
 
+/// Converts the daemon's status into the emitted wire shape.
+///
+/// Returns `None` for a status variant this plugin does not know yet
+/// (`mdns_sd::DaemonStatus` is non-exhaustive).
+fn from_daemon_status(status: &mdns_sd::DaemonStatus) -> Option<DaemonStatus> {
+    fn socket(state: &mdns_sd::SocketState) -> SocketState {
+        SocketState {
+            bound: state.is_bound(),
+            bind_error: state.bind_error().map(str::to_string),
+        }
+    }
+    fn membership(membership: &mdns_sd::Membership) -> Membership {
+        Membership {
+            addresses: membership.addrs().to_vec(),
+            joined: membership.is_joined(),
+            join_error: membership.join_error().map(str::to_string),
+        }
+    }
+    match status {
+        mdns_sd::DaemonStatus::Running(running) => Some(DaemonStatus::Running(RunningState {
+            ipv4_socket: socket(running.ipv4_socket()),
+            ipv6_socket: socket(running.ipv6_socket()),
+            enabled_interfaces: running
+                .enabled_intfs()
+                .iter()
+                .map(|intf| EnabledInterface {
+                    name: intf.name().to_string(),
+                    index: intf.index(),
+                    ipv4: intf.ipv4().map(membership),
+                    ipv6: intf.ipv6().map(membership),
+                })
+                .collect(),
+        })),
+        mdns_sd::DaemonStatus::Shutdown => Some(DaemonStatus::Shutdown),
+        other => {
+            log::warn!("Ignoring unknown daemon status: {other:?}");
+            None
+        }
+    }
+}
+
+/// Requests the daemon's current status.
+///
+/// Returns `Ok(None)` when the status could not be read this time
+/// (a full command queue, or an unknown status) and may be retried.
+async fn query_daemon_status(daemon: &ServiceDaemon) -> Result<Option<DaemonStatus>, String> {
+    match daemon.status() {
+        Ok(receiver) => match receiver.recv_async().await {
+            Ok(status) => Ok(from_daemon_status(&status)),
+            Err(_) => Ok(Some(DaemonStatus::Shutdown)),
+        },
+        Err(Error::Again) => Ok(None),
+        Err(Error::DaemonShutdown) => Ok(Some(DaemonStatus::Shutdown)),
+        Err(e) => Err(format!("Failed to query daemon status: {e:?}")),
+    }
+}
+
+/// Polls the daemon's status, emitting `daemon-status-changed` on every
+/// change, until the daemon shuts down.
+async fn poll_daemon_status<R: Runtime>(window: Window<R>, daemon: ServiceDaemon) {
+    let mut current: Option<DaemonStatus> = None;
+    loop {
+        match query_daemon_status(&daemon).await {
+            Ok(Some(status)) => {
+                let is_shutdown = status == DaemonStatus::Shutdown;
+                if current.as_ref() != Some(&status) {
+                    emit_event(
+                        &window,
+                        "daemon-status-changed",
+                        &DaemonStatusChangedEvent {
+                            status: status.clone(),
+                        },
+                    );
+                    current = Some(status);
+                }
+                if is_shutdown {
+                    break;
+                }
+            }
+            Ok(None) => {}
+            Err(e) => log::warn!("{e}"),
+        }
+        tokio::time::sleep(DAEMON_STATUS_CHECK_INTERVAL).await;
+    }
+}
+
+/// Starts the periodic `daemon-status-changed` emission; later calls
+/// emit the current status once, so a reloaded frontend gets it at once.
+pub async fn subscribe_daemon_status<R: Runtime>(
+    window: Window<R>,
+    state: &ManagedState,
+) -> Result<(), String> {
+    let daemon = state
+        .daemon
+        .lock()
+        .map_err(|e| format!("Failed to lock daemon: {e:?}"))?
+        .clone();
+    if state
+        .daemon_status_subscribed
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_ok()
+    {
+        tauri::async_runtime::spawn(poll_daemon_status(window, daemon));
+        return Ok(());
+    }
+    if let Some(status) = query_daemon_status(&daemon).await? {
+        emit_event(
+            &window,
+            "daemon-status-changed",
+            &DaemonStatusChangedEvent { status },
+        );
+    }
+    Ok(())
+}
+
 pub fn get_protocol_flags(state: &ManagedState) -> ProtocolFlags {
     let ipv4_enabled = state.ipv4_enabled.load(Ordering::SeqCst);
     let ipv6_enabled = state.ipv6_enabled.load(Ordering::SeqCst);
@@ -1049,5 +1167,50 @@ mod fullname_tests {
             "Office.Printer",
             "Office.Printer._http._tcp.local.",
         );
+    }
+}
+
+#[cfg(test)]
+mod daemon_status_tests {
+    use super::from_daemon_status;
+    use crate::models::DaemonStatus;
+    use mdns_sd::ServiceDaemon;
+
+    #[test]
+    fn test_running_daemon_reports_its_sockets_and_interfaces() {
+        let daemon = ServiceDaemon::new().expect("daemon starts");
+        let status = daemon
+            .status()
+            .expect("status request")
+            .recv()
+            .expect("status reply");
+
+        let Some(DaemonStatus::Running(running)) = from_daemon_status(&status) else {
+            panic!("expected a running status, got {status:?}");
+        };
+        assert!(running.ipv4_socket.bound || running.ipv6_socket.bound);
+        for socket in [&running.ipv4_socket, &running.ipv6_socket] {
+            assert_eq!(socket.bound, socket.bind_error.is_none());
+        }
+        for intf in &running.enabled_interfaces {
+            assert!(intf.ipv4.is_some() || intf.ipv6.is_some());
+            for membership in intf.ipv4.iter().chain(intf.ipv6.iter()) {
+                assert_eq!(membership.joined, membership.join_error.is_none());
+            }
+        }
+
+        daemon.shutdown().expect("shutdown request");
+    }
+
+    #[test]
+    fn test_shut_down_daemon_reports_shutdown() {
+        let daemon = ServiceDaemon::new().expect("daemon starts");
+        let status = daemon
+            .shutdown()
+            .expect("shutdown request")
+            .recv()
+            .expect("shutdown reply");
+
+        assert_eq!(from_daemon_status(&status), Some(DaemonStatus::Shutdown));
     }
 }

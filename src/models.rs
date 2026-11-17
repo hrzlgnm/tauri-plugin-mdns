@@ -122,6 +122,64 @@ pub struct ServiceRemovedEvent {
     pub at_micros: u64,
 }
 
+/// The daemon's status, as reported in `daemon-status-changed`.
+///
+/// Mirrors `mdns_sd::DaemonStatus`, whose types are not serializable.
+/// Serialized as an object tagged by `status`: `running` or `shutdown`.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum DaemonStatus {
+    /// The daemon runs, with at least one of its multicast sockets bound.
+    Running(RunningState),
+    /// The daemon has stopped; discovery is no longer possible.
+    Shutdown,
+}
+
+/// The local setup of a running daemon: its multicast sockets and the
+/// interfaces it uses.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+pub struct RunningState {
+    pub ipv4_socket: SocketState,
+    pub ipv6_socket: SocketState,
+    /// Ordered by interface index.
+    pub enabled_interfaces: Vec<EnabledInterface>,
+}
+
+/// The state of the multicast socket of one IP version.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+pub struct SocketState {
+    pub bound: bool,
+    pub bind_error: Option<String>,
+}
+
+/// A network interface enabled in the daemon.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+pub struct EnabledInterface {
+    pub name: String,
+    pub index: u32,
+    /// `None` when the daemon has no IPv4 address on the interface.
+    pub ipv4: Option<Membership>,
+    /// `None` when the daemon has no IPv6 address on the interface.
+    pub ipv6: Option<Membership>,
+}
+
+/// The multicast group membership of one IP version on an interface.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+pub struct Membership {
+    /// Sorted by numeric value.
+    pub addresses: Vec<IpAddr>,
+    pub joined: bool,
+    /// The error from the last failed join; the daemon retries at its
+    /// next IP check.
+    pub join_error: Option<String>,
+}
+
+/// Event emitted when the daemon's status changes.
+#[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
+pub struct DaemonStatusChangedEvent {
+    pub status: DaemonStatus,
+}
+
 #[derive(Deserialize, Serialize, Clone, Eq, PartialEq, Debug)]
 pub struct ProtocolFlags {
     pub ipv4: bool,
@@ -623,5 +681,75 @@ mod instance_fullname_tests {
         ] {
             assert_eq!(escape_instance_fullname(name), name);
         }
+    }
+}
+#[cfg(test)]
+mod daemon_status_tests {
+    use super::{
+        DaemonStatus, DaemonStatusChangedEvent, EnabledInterface, Membership, RunningState,
+        SocketState,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn test_running_status_serializes_tagged_with_snake_case_fields() {
+        let event = DaemonStatusChangedEvent {
+            status: DaemonStatus::Running(RunningState {
+                ipv4_socket: SocketState {
+                    bound: true,
+                    bind_error: None,
+                },
+                ipv6_socket: SocketState {
+                    bound: false,
+                    bind_error: Some("Address family not supported".to_string()),
+                },
+                enabled_interfaces: vec![EnabledInterface {
+                    name: "eth0".to_string(),
+                    index: 2,
+                    ipv4: Some(Membership {
+                        addresses: vec!["192.168.1.10".parse().expect("valid ip")],
+                        joined: false,
+                        join_error: Some("No such device".to_string()),
+                    }),
+                    ipv6: None,
+                }],
+            }),
+        };
+
+        assert_eq!(
+            serde_json::to_value(&event).expect("serializes"),
+            json!({
+                "status": {
+                    "status": "running",
+                    "ipv4_socket": { "bound": true, "bind_error": null },
+                    "ipv6_socket": {
+                        "bound": false,
+                        "bind_error": "Address family not supported"
+                    },
+                    "enabled_interfaces": [{
+                        "name": "eth0",
+                        "index": 2,
+                        "ipv4": {
+                            "addresses": ["192.168.1.10"],
+                            "joined": false,
+                            "join_error": "No such device"
+                        },
+                        "ipv6": null
+                    }]
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn test_shutdown_status_serializes_as_tag_only() {
+        let event = DaemonStatusChangedEvent {
+            status: DaemonStatus::Shutdown,
+        };
+
+        assert_eq!(
+            serde_json::to_value(&event).expect("serializes"),
+            json!({ "status": { "status": "shutdown" } })
+        );
     }
 }
