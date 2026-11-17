@@ -181,7 +181,8 @@ export async function subscribeMetrics(): Promise<void> {
 /**
  * Starts the periodic `daemon-status-changed` emission, sent whenever the
  * daemon's status changes. Later calls (e.g. after a frontend reload)
- * re-emit the current status, and reject if it cannot be read.
+ * re-emit the current status, and reject if it cannot be read. A status
+ * the plugin does not know yet is not emitted.
  */
 export async function subscribeDaemonStatus(): Promise<void> {
     return invoke('plugin:mdns|subscribe_daemon_status');

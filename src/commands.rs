@@ -85,7 +85,8 @@ pub fn subscribe_metrics<R: Runtime>(window: Window<R>, state: State<'_, Managed
 }
 
 /// Starts the periodic `daemon-status-changed` emission; later calls
-/// re-emit the current status, failing if it cannot be read.
+/// re-emit the current status, failing if it cannot be read. A status
+/// the plugin does not know yet is not emitted.
 #[tauri::command]
 pub async fn subscribe_daemon_status<R: Runtime>(
     window: Window<R>,

@@ -713,23 +713,22 @@ enum StatusQuery {
 }
 
 /// Formats a failed status query for logs and command errors.
-fn status_query_error(e: &Error) -> String {
-    format!("Failed to query daemon status: {e:?}")
+fn status_query_error(reason: &str) -> String {
+    format!("Failed to query daemon status: {reason}")
 }
 
 /// Requests the daemon's current status.
 async fn query_daemon_status(daemon: &ServiceDaemon) -> Result<StatusQuery, String> {
-    let known = |status| Ok(StatusQuery::Known(status));
     match daemon.status() {
         Ok(receiver) => match receiver.recv_async().await {
             Ok(status) => {
                 Ok(from_daemon_status(&status).map_or(StatusQuery::Unknown, StatusQuery::Known))
             }
-            Err(_) => known(DaemonStatus::Shutdown),
+            Err(_) => Ok(StatusQuery::Known(DaemonStatus::Shutdown)),
         },
         Err(Error::Again) => Ok(StatusQuery::Busy),
-        Err(Error::DaemonShutdown) => known(DaemonStatus::Shutdown),
-        Err(e) => Err(status_query_error(&e)),
+        Err(Error::DaemonShutdown) => Ok(StatusQuery::Known(DaemonStatus::Shutdown)),
+        Err(e) => Err(status_query_error(&format!("{e:?}"))),
     }
 }
 
@@ -805,7 +804,7 @@ pub async fn subscribe_daemon_status<R: Runtime>(
             StatusQuery::Busy => tokio::time::sleep(DAEMON_STATUS_RETRY_DELAY).await,
         }
     }
-    Err(status_query_error(&Error::Again))
+    Err(status_query_error("command queue stayed full"))
 }
 
 pub fn get_protocol_flags(state: &ManagedState) -> ProtocolFlags {
