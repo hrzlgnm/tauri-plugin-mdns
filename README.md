@@ -4,12 +4,13 @@
 [![npm](https://img.shields.io/npm/v/tauri-plugin-mdns-api)](https://www.npmjs.com/package/tauri-plugin-mdns-api)
 [![License: MIT-0](https://img.shields.io/badge/License-MIT--0-blue.svg)](https://opensource.org/license/mit-0)
 
-mDNS service discovery for Tauri apps on desktop and Android, built on
+mDNS service discovery (browse only) for Tauri apps on desktop and Android, built on
 [`mdns-sd`](https://docs.rs/mdns-sd). It finds service types, resolves
 instances, reports removals, and exposes interface selection, protocol
 flags, daemon metrics and status, and instance verification.
 
-iOS is not supported; iOS builds fail with an explicit error.
+iOS is not supported and won't be; iOS builds fail with an explicit
+error.
 
 ## Android
 
@@ -78,13 +79,18 @@ import {
 } from 'tauri-plugin-mdns-api';
 
 if ((await localNetworkStatus()) !== 'granted') {
-  // Explain why first, and request from a user gesture. If denied, point
-  // the user to Settings → Apps → Permissions → Nearby devices.
+  // Explain why first, and request from a user gesture. While denied,
+  // show a blocking empty state pointing to
+  // Settings → Apps → Permissions → Nearby devices.
   await requestLocalNetworkAccess();
 }
 
-await onServiceTypeFound(({ service_type }) => void browseMany([service_type]));
-await onServiceResolved(({ service }) => console.log(service.instance_fullname));
+await onServiceTypeFound(({ service_type }) => {
+  void browseMany([service_type]);
+});
+await onServiceResolved(({ service }) => {
+  console.log(service.instance_fullname);
+});
 await browseTypes();
 ```
 
