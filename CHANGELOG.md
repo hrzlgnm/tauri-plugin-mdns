@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.5.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.8...tauri-plugin-mdns-v0.5.0) (2026-11-17)
+
+
+### Features
+
+* add ubuntu builder image ([#123](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/123)) ([85e1a35](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/85e1a353b97fe3bcf0825ccc4e934c3c166d3fef))
+* report daemon status via subscribe_daemon_status ([#141](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/141)) ([1919dbd](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/1919dbd5f77d5e9d02f44988dd2e0c3c22045b5d))
+
+
+### Bug Fixes
+
+* declare the MIT license in package metadata ([#146](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/146)) ([a081d35](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a081d355fe09f9e5e495758ac5fd5bc72cac7717))
+* drop base.name label from builder image ([#126](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/126)) ([01e3f94](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/01e3f94811348b1195c30f1022aac7cd001245af))
+* emit readable instance fullnames with mdns-sd 0.22 ([#140](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/140)) ([3f90abc](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/3f90abc9cad66d7d632b52055af5b045228c3617))
+
+
+### Dependencies
+
+* lock file maintenance ([#133](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/133)) ([1fe0f85](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/1fe0f85249a4dcc1a8ae6b10a1a860f549d9498c))
+* lock file maintenance ([#147](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/147)) ([b521b5e](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/b521b5eee7d7632f0484ca2d89965acdcdc41802))
+* update actions/setup-java digest to d1374f8 ([#131](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/131)) ([dd9071a](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/dd9071aae9155a6765529c354b8b8fce4592ea04))
+* update dependency rollup to v4.68.1 ([#129](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/129)) ([3fe4d22](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/3fe4d220c1639507290e7ddaa5cf4b7c2786a526))
+* update dependency rollup to v4.68.2 ([#130](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/130)) ([2ac1156](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/2ac115627a7e98b4b33a64198577b053abba81c0))
+* update dependency rollup to v4.68.3 ([#135](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/135)) ([91bbc7b](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/91bbc7b7aa4df1f52c07f3ce9d852a532a46a10a))
+* update dtolnay/rust-toolchain digest to 3900882 ([#132](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/132)) ([05b2ab3](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/05b2ab3b094d7b0e2a3caeb2146cca32b6266f6d))
+* update rust crate mdns-sd to v0.22.0 ([#137](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/137)) ([5c68075](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/5c6807536fe4f6f6c51908febe2bb06bbad48172))
+* update tauri monorepo to v2.12.6 ([#136](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/136)) ([6054775](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/60547759d990c179607fc56cc295fd3ca5fce464))
+* update ubuntu docker tag to v26 ([#125](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/125)) ([9f516da](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/9f516da299efa4ff798a7ddd75e2df5050e552ac))
+* update ubuntu:26.04 docker digest to 065aa86 ([#128](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/128)) ([a68a630](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a68a6308e75f8901d0859f8a9571afcb5a775baa))
+* update ubuntu:26.04 docker digest to d66b366 ([#134](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/134)) ([5c39a6f](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/5c39a6f3dd440b340d7673a724035e9908943c4d))
+
+
+### Documentation
+
+* bring the Rust fullname docs in line with the TS API ([#143](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/143)) ([23fb561](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/23fb561b3c8e640afa068936f71dfdcbdc003bfb)), closes [#139](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/139)
+* describe the readable instance fullname contract ([#142](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/142)) ([a5e37bc](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a5e37bc17b7ac21014ae9729739f368dae0e8d12))
+* name commands instead of linking private items in crate docs ([#144](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/144)) ([d206e06](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/d206e06c2b5345c1cdc90026a338761ccafe9f4a))
+* tighten the README ([#145](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/145)) ([7e2d482](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/7e2d482171ebed72615db72e0bd413a46b4ddaa1))
+
+
+### Miscellaneous Chores
+
+* configure agent skills for issues, triage and domain docs ([#138](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/138)) ([9c2eda6](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/9c2eda63930eb5609d525ebd26deced5c7855236))
+
 ## [0.4.8](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.7...tauri-plugin-mdns-v0.4.8) (2026-11-10)
 
 
