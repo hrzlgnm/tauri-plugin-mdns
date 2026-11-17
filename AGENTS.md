@@ -114,3 +114,21 @@ originating request) and fix its findings before pushing or
 opening a PR.
 Keep pull request descriptions to summary and issue references;
 omit testing recaps, CI and Validation already cover those.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on hrzlgnm/tauri-plugin-mdns (via `gh`).
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label named after its role
+(`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`,
+`wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`.
+See `docs/agents/domain.md`.
