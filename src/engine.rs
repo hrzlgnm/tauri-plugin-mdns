@@ -150,7 +150,7 @@ fn convert_to_scoped_addr(host_ip: &mdns_sd::ScopedIp) -> ScopedAddr {
 ///
 /// Service types and subtypes use lowercase canonical form (see
 /// [`canonicalize_wire_type`]); instance fullnames (unescaped, see
-/// [`display_fullname`]) and hostnames keep wire case for display.
+/// [`unescape_instance_fullname`]) and hostnames keep wire case for display.
 fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService {
     let addresses: Vec<ScopedAddr> = resolved
         .addresses
@@ -181,7 +181,7 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
         .collect();
     sorted_txt.sort_by(|a, b| a.key.cmp(&b.key));
     ResolvedService {
-        instance_fullname: display_fullname(&resolved.fullname),
+        instance_fullname: unescape_instance_fullname(&resolved.fullname),
         // Lowercase canonical form: frontends group by this string,
         // so wire case would split results.
         service_type: canonicalize_wire_type(&resolved.ty_domain),
@@ -195,6 +195,19 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
         txt: sorted_txt,
         updated_at_micros: timestamp_micros(),
         dead: false,
+    }
+}
+
+/// Builds the `service-removed` payload from the instance fullname that
+/// `ServiceEvent::ServiceRemoved` carries.
+///
+/// The event's service type is ignored: for a subtype browse it is the
+/// subtype key, while `service-resolved` names the instance under its
+/// main type, which the fullname already ends in.
+fn service_removed_event(reported_fullname: &str) -> ServiceRemovedEvent {
+    ServiceRemovedEvent {
+        instance_name: unescape_instance_fullname(reported_fullname),
+        at_micros: timestamp_micros(),
     }
 }
 
@@ -357,14 +370,11 @@ pub fn browse_many<R: Runtime>(
                         },
                     ),
 
-                    ServiceEvent::ServiceRemoved(_service_type, instance_name) => {
+                    ServiceEvent::ServiceRemoved(_service_type, instance_fullname) => {
                         emit_event(
                             &window,
                             "service-removed",
-                            &ServiceRemovedEvent {
-                                instance_name: display_fullname(&instance_name),
-                                at_micros: timestamp_micros(),
-                            },
+                            &service_removed_event(&instance_fullname),
                         );
                     }
                     ServiceEvent::SearchStopped(_service_type) => {
@@ -415,14 +425,14 @@ fn select_fresh_browses(service_types: Vec<String>, queriers: &mut HashSet<Strin
 /// Verifies that an instance is still present on the network.
 ///
 /// Takes the fullname as emitted in `service-resolved`, which is
-/// escaped again (see [`reported_fullname`]) before it reaches the daemon.
+/// escaped again (see [`escape_instance_fullname`]) before it reaches the daemon.
 pub fn verify(instance_fullname: String, state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
         .lock()
         .map_err(|e| format!("Failed to lock daemon: {e:?}"))?;
     daemon
-        .verify(reported_fullname(&instance_fullname), VERIFY_TIMEOUT)
+        .verify(escape_instance_fullname(&instance_fullname), VERIFY_TIMEOUT)
         .map_err(|e| format!("Failed to verify {instance_fullname}: {e:?}"))?;
     Ok(())
 }
@@ -952,8 +962,8 @@ mod capable_interface_tests {
 
 #[cfg(test)]
 mod fullname_tests {
-    use super::from_resolved_service;
-    use crate::models::{display_fullname, reported_fullname};
+    use super::{from_resolved_service, service_removed_event};
+    use crate::models::escape_instance_fullname;
 
     fn resolve(ty_domain: &str, instance: &str) -> mdns_sd::ResolvedService {
         mdns_sd::ServiceInfo::new(
@@ -968,14 +978,18 @@ mod fullname_tests {
         .as_resolved_service()
     }
 
-    /// Asserts the emitted fullname, that a removal of the same instance
-    /// emits the same string, and that `verify` gets the daemon's name back.
+    /// Asserts the emitted fullname, that the removal of the same
+    /// instance emits the same string, and that `verify` hands the
+    /// daemon its own fullname back.
     fn assert_fullname(ty_domain: &str, instance: &str, expected: &str) {
         let resolved = resolve(ty_domain, instance);
         let emitted = from_resolved_service(&resolved).instance_fullname;
         assert_eq!(emitted, expected);
-        assert_eq!(display_fullname(&resolved.fullname), emitted);
-        assert_eq!(reported_fullname(&emitted), resolved.fullname);
+        assert_eq!(
+            service_removed_event(&resolved.fullname).instance_name,
+            expected
+        );
+        assert_eq!(escape_instance_fullname(&emitted), resolved.fullname);
     }
 
     #[test]
@@ -1029,19 +1043,11 @@ mod fullname_tests {
     }
 
     #[test]
-    fn test_reported_fullname_passes_through_names_without_service_type() {
-        for name in [
-            "no-dot",
-            "a.b",
-            "a._http._tcp.local",
-            "a.b._bad._xyz.local.",
-        ] {
-            assert_eq!(reported_fullname(name), name);
-        }
-    }
-
-    #[test]
-    fn test_display_fullname_passes_through_names_without_dot() {
-        assert_eq!(display_fullname(r"only\.escaped"), r"only\.escaped");
+    fn test_subtype_instance_is_named_under_main_type() {
+        assert_fullname(
+            "_printer._sub._http._tcp.local.",
+            "Office.Printer",
+            "Office.Printer._http._tcp.local.",
+        );
     }
 }

@@ -361,7 +361,7 @@ pub fn canonicalize_wire_type(service_type: &str) -> String {
 /// Resolved and removed instances must both go through this function so
 /// frontends can match a removal to its resolution by string equality.
 /// A fullname without an unescaped dot is returned unchanged.
-pub fn display_fullname(reported: &str) -> String {
+pub(crate) fn unescape_instance_fullname(reported: &str) -> String {
     match service_type_of_reported_fullname(reported) {
         Some(ty_domain) => mdns_sd::instance_name_unescaped(reported) + "." + ty_domain,
         None => reported.to_string(),
@@ -388,14 +388,14 @@ fn service_type_of_reported_fullname(reported: &str) -> Option<&str> {
     None
 }
 
-/// Converts a fullname emitted by [`display_fullname`] back into the form
+/// Converts a fullname emitted by [`unescape_instance_fullname`] back into the form
 /// `mdns-sd` expects, so frontends can pass emitted names to `verify`.
 ///
 /// The last three labels are the service type, which never contains an
 /// escaped dot; the rest is the instance name, whose `\` and `.` are
 /// escaped again. A name that does not end in a valid service type is
 /// returned unchanged.
-pub fn reported_fullname(display: &str) -> String {
+pub(crate) fn escape_instance_fullname(display: &str) -> String {
     let Some(without_root) = display.strip_suffix('.') else {
         return display.to_string();
     };
@@ -606,5 +606,30 @@ mod escaping_tests {
     #[test]
     fn test_none_stays_none() {
         assert_eq!(bytes_option_to_string_option_with_escaping(None), None);
+    }
+}
+
+#[cfg(test)]
+mod instance_fullname_tests {
+    use super::{escape_instance_fullname, unescape_instance_fullname};
+
+    #[test]
+    fn test_escape_passes_through_names_without_service_type() {
+        for name in [
+            "no-dot",
+            "a.b",
+            "a._http._tcp.local",
+            "a.b._bad._xyz.local.",
+        ] {
+            assert_eq!(escape_instance_fullname(name), name);
+        }
+    }
+
+    #[test]
+    fn test_unescape_passes_through_names_without_dot() {
+        assert_eq!(
+            unescape_instance_fullname(r"only\.escaped"),
+            r"only\.escaped"
+        );
     }
 }
