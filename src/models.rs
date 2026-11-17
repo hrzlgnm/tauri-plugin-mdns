@@ -74,7 +74,8 @@ impl Display for ScopedAddr {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedService {
     /// Readable instance fullname: the unescaped instance name, a `.`,
-    /// and the service type. The form `verify` expects.
+    /// and the service type in wire case (unlike the lowercased
+    /// `service_type`). The form `verify` expects.
     pub instance_fullname: String,
     pub service_type: String,
     pub hostname: String,

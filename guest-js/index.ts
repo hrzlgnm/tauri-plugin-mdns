@@ -33,7 +33,9 @@ export interface ScopedAddr {
 export interface ResolvedService {
     /**
      * Readable instance fullname: the instance name without DNS escapes,
-     * a `.`, and the service type (e.g. `L.A.R.A Hub._lara._tcp.local.`).
+     * a `.`, and the service type as advertised, in wire case (e.g.
+     * `L.A.R.A Hub._lara._tcp.local.`), unlike the lowercased
+     * {@link ResolvedService.service_type}.
      * Matches `instance_name` of `service-removed` for the same instance
      * and is the form {@link verifyInstance} expects. The instance name
      * may itself contain dots, so don't split it at the first one.
@@ -135,7 +137,7 @@ export async function stopBrowse(): Promise<void> {
  *
  * Pass {@link ResolvedService.instance_fullname} as received; the plugin
  * escapes it for the daemon. An already escaped name (`L\.A...`) would be
- * escaped twice and match nothing.
+ * escaped twice and match nothing, still resolving without an error.
  */
 export async function verifyInstance(instanceFullname: string): Promise<void> {
     return invoke('plugin:mdns|verify', { instanceFullname });
