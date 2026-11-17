@@ -74,8 +74,12 @@ impl Display for ScopedAddr {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedService {
     /// Readable instance fullname: the unescaped instance name, a `.`,
-    /// and the service type in wire case (unlike the lowercased
-    /// `service_type`). The form `verify` expects.
+    /// and the service type in wire case (e.g.
+    /// `L.A.R.A Hub._lara._tcp.local.`), unlike the lowercased
+    /// `service_type`. Matches [`ServiceRemovedEvent::instance_name`] for
+    /// the same instance and is the form the `plugin:mdns|verify` command
+    /// expects. The instance name may itself contain dots, so don't split
+    /// it at the first one.
     pub instance_fullname: String,
     pub service_type: String,
     pub hostname: String,

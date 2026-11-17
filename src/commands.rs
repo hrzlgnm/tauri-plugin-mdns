@@ -52,7 +52,10 @@ pub fn stop_browse(state: State<'_, ManagedState>) -> Result<(), String> {
 /// Verifies that an instance is still present on the network.
 ///
 /// Takes the readable `instance_fullname` as emitted in
-/// `service-resolved`, not an escaped DNS fullname.
+/// `service-resolved` (the same form as `instance_name` in
+/// `service-removed`), not an escaped DNS fullname. An already escaped
+/// name (`L\.A...`) would be escaped twice and match nothing, still
+/// returning `Ok`.
 #[tauri::command]
 pub fn verify(instance_fullname: String, state: State<'_, ManagedState>) -> Result<(), String> {
     engine::verify(instance_fullname, &state)
