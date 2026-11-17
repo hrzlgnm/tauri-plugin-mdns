@@ -395,19 +395,19 @@ fn service_type_of_reported_fullname(reported: &str) -> Option<&str> {
 /// escaped dot; the rest is the instance name, whose `\` and `.` are
 /// escaped again. A name that does not end in a valid service type is
 /// returned unchanged.
-pub(crate) fn escape_instance_fullname(display: &str) -> String {
-    let Some(without_root) = display.strip_suffix('.') else {
-        return display.to_string();
+pub(crate) fn escape_instance_fullname(emitted: &str) -> String {
+    let Some(without_root) = emitted.strip_suffix('.') else {
+        return emitted.to_string();
     };
     let mut labels = without_root.rsplitn(4, '.');
     let (Some(domain), Some(protocol), Some(service), Some(instance)) =
         (labels.next(), labels.next(), labels.next(), labels.next())
     else {
-        return display.to_string();
+        return emitted.to_string();
     };
     let ty_domain = format!("{service}.{protocol}.{domain}.");
     if check_service_type_fully_qualified(&ty_domain) != Ok(MdnsLabelType::ServiceType) {
-        return display.to_string();
+        return emitted.to_string();
     }
     let instance = instance.replace('\\', r"\\").replace('.', r"\.");
     format!("{instance}.{ty_domain}")
@@ -611,7 +611,7 @@ mod escaping_tests {
 
 #[cfg(test)]
 mod instance_fullname_tests {
-    use super::{escape_instance_fullname, unescape_instance_fullname};
+    use super::escape_instance_fullname;
 
     #[test]
     fn test_escape_passes_through_names_without_service_type() {
@@ -623,13 +623,5 @@ mod instance_fullname_tests {
         ] {
             assert_eq!(escape_instance_fullname(name), name);
         }
-    }
-
-    #[test]
-    fn test_unescape_passes_through_names_without_dot() {
-        assert_eq!(
-            unescape_instance_fullname(r"only\.escaped"),
-            r"only\.escaped"
-        );
     }
 }
