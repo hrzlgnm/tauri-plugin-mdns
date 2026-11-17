@@ -149,8 +149,8 @@ fn convert_to_scoped_addr(host_ip: &mdns_sd::ScopedIp) -> ScopedAddr {
 /// Converts a daemon `ResolvedService` into the emitted wire shape.
 ///
 /// Service types and subtypes use lowercase canonical form (see
-/// [`canonicalize_wire_type`]); instance fullnames and hostnames keep
-/// wire case for display.
+/// [`canonicalize_wire_type`]); instance fullnames (unescaped, see
+/// [`unescape_instance_fullname`]) and hostnames keep wire case for display.
 fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService {
     let addresses: Vec<ScopedAddr> = resolved
         .addresses
@@ -181,7 +181,7 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
         .collect();
     sorted_txt.sort_by(|a, b| a.key.cmp(&b.key));
     ResolvedService {
-        instance_fullname: resolved.fullname.clone(),
+        instance_fullname: unescape_instance_fullname(&resolved.fullname),
         // Lowercase canonical form: frontends group by this string,
         // so wire case would split results.
         service_type: canonicalize_wire_type(&resolved.ty_domain),
@@ -195,6 +195,19 @@ fn from_resolved_service(resolved: &mdns_sd::ResolvedService) -> ResolvedService
         txt: sorted_txt,
         updated_at_micros: timestamp_micros(),
         dead: false,
+    }
+}
+
+/// Builds the `service-removed` payload from the instance fullname that
+/// `ServiceEvent::ServiceRemoved` carries.
+///
+/// The event's service type is ignored: for a subtype browse it is the
+/// subtype key, while `service-resolved` names the instance under its
+/// main type, which the fullname already ends in.
+fn service_removed_event(reported_fullname: &str) -> ServiceRemovedEvent {
+    ServiceRemovedEvent {
+        instance_name: unescape_instance_fullname(reported_fullname),
+        at_micros: timestamp_micros(),
     }
 }
 
@@ -357,14 +370,11 @@ pub fn browse_many<R: Runtime>(
                         },
                     ),
 
-                    ServiceEvent::ServiceRemoved(_service_type, instance_name) => {
+                    ServiceEvent::ServiceRemoved(_service_type, instance_fullname) => {
                         emit_event(
                             &window,
                             "service-removed",
-                            &ServiceRemovedEvent {
-                                instance_name,
-                                at_micros: timestamp_micros(),
-                            },
+                            &service_removed_event(&instance_fullname),
                         );
                     }
                     ServiceEvent::SearchStopped(_service_type) => {
@@ -413,13 +423,16 @@ fn select_fresh_browses(service_types: Vec<String>, queriers: &mut HashSet<Strin
 }
 
 /// Verifies that an instance is still present on the network.
+///
+/// Takes the fullname as emitted in `service-resolved`, which is
+/// escaped again (see [`escape_instance_fullname`]) before it reaches the daemon.
 pub fn verify(instance_fullname: String, state: &ManagedState) -> Result<(), String> {
     let daemon = state
         .daemon
         .lock()
         .map_err(|e| format!("Failed to lock daemon: {e:?}"))?;
     daemon
-        .verify(instance_fullname.clone(), VERIFY_TIMEOUT)
+        .verify(escape_instance_fullname(&instance_fullname), VERIFY_TIMEOUT)
         .map_err(|e| format!("Failed to verify {instance_fullname}: {e:?}"))?;
     Ok(())
 }
@@ -943,6 +956,98 @@ mod capable_interface_tests {
             any_loopback_found,
             "Loopback interfaces {:?} should be included in mdns-capable interfaces",
             loopback_names
+        );
+    }
+}
+
+#[cfg(test)]
+mod fullname_tests {
+    use super::{from_resolved_service, service_removed_event};
+    use crate::models::escape_instance_fullname;
+
+    fn resolve(ty_domain: &str, instance: &str) -> mdns_sd::ResolvedService {
+        mdns_sd::ServiceInfo::new(
+            ty_domain,
+            instance,
+            "host.local.",
+            "192.168.1.1",
+            80,
+            None::<std::collections::HashMap<String, String>>,
+        )
+        .expect("valid service info")
+        .as_resolved_service()
+    }
+
+    /// Asserts the emitted fullname, that the removal of the same
+    /// instance emits the same string, and that `verify` hands the
+    /// daemon its own fullname back.
+    fn assert_fullname(ty_domain: &str, instance: &str, expected: &str) {
+        let resolved = resolve(ty_domain, instance);
+        let emitted = from_resolved_service(&resolved).instance_fullname;
+        assert_eq!(emitted, expected);
+        assert_eq!(
+            service_removed_event(&resolved.fullname).instance_name,
+            expected
+        );
+        assert_eq!(escape_instance_fullname(&emitted), resolved.fullname);
+    }
+
+    #[test]
+    fn test_plain_instance_name_is_unchanged() {
+        assert_fullname(
+            "_http._tcp.local.",
+            "my-service",
+            "my-service._http._tcp.local.",
+        );
+    }
+
+    #[test]
+    fn test_instance_dots_are_unescaped() {
+        assert_fullname(
+            "_lara._tcp.local.",
+            "L.A.R.A Hub",
+            "L.A.R.A Hub._lara._tcp.local.",
+        );
+    }
+
+    #[test]
+    fn test_instance_trailing_dot_is_kept() {
+        assert_fullname("_http._tcp.local.", "ends.", "ends.._http._tcp.local.");
+    }
+
+    #[test]
+    fn test_instance_internal_and_trailing_dots_are_kept() {
+        assert_fullname(
+            "_http._tcp.local.",
+            "foo.bar.",
+            "foo.bar.._http._tcp.local.",
+        );
+    }
+
+    #[test]
+    fn test_instance_backslash_is_unescaped() {
+        assert_fullname(
+            "_http._tcp.local.",
+            r"back\slash",
+            r"back\slash._http._tcp.local.",
+        );
+    }
+
+    #[test]
+    fn test_service_type_keeps_wire_case() {
+        assert_fullname(
+            "_Nearby._tcp.local.",
+            "My.Phone",
+            "My.Phone._Nearby._tcp.local.",
+        );
+    }
+
+    #[test]
+    fn test_subtype_instance_is_named_under_main_type() {
+        assert_fullname(
+            "_printer._sub._http._tcp.local.",
+            "Office.Printer",
+            "Office.Printer._http._tcp.local.",
         );
     }
 }
