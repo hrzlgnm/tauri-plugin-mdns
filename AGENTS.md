@@ -53,6 +53,11 @@ dependencies, so it swaps one system dependency for another without
 removing the requirement — keep default features. Do not re-add the
 dropped packages without proving a `-sys` crate re-entered the graph.
 
+Those jobs run in the `ghcr.io/hrzlgnm/tauri-plugin-mdns-ubuntu-builder`
+image (`.github/docker/`, pinned by digest), which has the packages
+preinstalled; add a system package to its `Dockerfile`, not as an
+`apt-get` step in a workflow.
+
 ## Android native code
 
 - The plugin ships its own `android/` library module (manifest +

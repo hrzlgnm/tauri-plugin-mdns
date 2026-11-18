@@ -53,8 +53,13 @@ jobs:
       contents: read
       id-token: write # needed for crates.io trusted publishing (OIDC)
     runs-on: ubuntu-latest
+    container: ghcr.io/hrzlgnm/tauri-plugin-mdns-ubuntu-builder:v1@sha256:88e1d39d15ea3e320216656e8750791bf1e2a11a805677ac2e1e987286ed8a20
     name: 📦 Publish to crates.io
     steps:
+      - name: 🔧 Configure Git safe directory
+        shell: bash
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: 🔄 Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -64,10 +69,6 @@ jobs:
 
       - name: 🦀 Setup Rust
         uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
-
-      - name: 🧰 Install Tauri system dependencies
-        shell: bash
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev
 
       - name: 🔍 Verify tag matches crate version
         shell: bash
