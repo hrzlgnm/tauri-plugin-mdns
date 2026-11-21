@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.5.1](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.5.0...tauri-plugin-mdns-v0.5.1) (2026-11-21)
+
+
+### Dependencies
+
+* lock file maintenance ([#156](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/156)) ([87216bc](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/87216bca0ec68d6dd74fcf94eed172daa83f0607))
+* update dependency rollup to v4.68.4 ([#157](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/157)) ([26b3a13](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/26b3a1332063d0eaf20f95f61431838c3bbec60c))
+* update dependency rollup to v4.68.5 ([#159](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/159)) ([b57c586](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/b57c586a2f16fd69bae92b280724e3f83d246ef2))
+* update dependency rollup to v4.68.6 ([#160](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/160)) ([e34ce82](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/e34ce82f45ffb13844ce6d343ee7a5791c45e541))
+* update hrzlgnm/actions action to v2.15.0 ([#154](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/154)) ([088fac5](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/088fac5c5cb256c9e0ea531f4cd72e06d1545ce1))
+* update rust crate serde_with to v3.25.0 ([#158](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/158)) ([2991e87](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/2991e8776e0bd8eb8e0d4a819482d32bfd8c4cfd))
+* update tauri monorepo to v2.12.7 ([#151](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/151)) ([a7d9bc2](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/a7d9bc233b6cee0cc6ad6b290a66de59d78a8199))
+
+
+### Documentation
+
+* **agents:** limit Markdown-only commits to text checks ([#149](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/149)) ([18f481e](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/18f481ec800e20be6ec4663f676bf18a989eb3cd))
+* **agents:** name the committing tool in AI attribution trailers ([#148](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/148)) ([629215b](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/629215b007efe889d484c4d58f5df49dad213a3e))
+
+
+### Miscellaneous Chores
+
+* add missing SPDX license headers ([#152](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/152)) ([8e25b22](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/8e25b22237fb0c0ece4853e6b72e519e3e550497))
+
+
+### Continuous Integration
+
+* check SPDX headers with the shared reusable workflow ([#153](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/153)) ([911c4b5](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/911c4b58fc229024e11c564716ccbf353cc1c1c6))
+* run Rust jobs in the prebuilt Ubuntu builder image ([#155](https://github.com/hrzlgnm/tauri-plugin-mdns/issues/155)) ([dcf1e7a](https://github.com/hrzlgnm/tauri-plugin-mdns/commit/dcf1e7a189a1c49f940c2d1aba41115dc8700434))
+
 ## [0.5.0](https://github.com/hrzlgnm/tauri-plugin-mdns/compare/tauri-plugin-mdns-v0.4.8...tauri-plugin-mdns-v0.5.0) (2026-11-17)
 
 
